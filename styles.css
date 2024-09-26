@@ -1,0 +1,112 @@
+body {
+    /* Center the form on the page */
+    text-align: center;
+}
+
+fieldset {
+    display: inline-block;
+    border: 1px solid #ccc;
+    border-radius: 1em;
+    box-sizing: border-box;
+}
+
+ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+label {
+    /* Uniform size & alignment */
+    display: inline-block;
+    min-width: 100px;
+    text-align: right;
+    padding-right: 5px;
+}
+
+.radio_label {
+    min-width: none;
+    padding-right: 0;
+}
+
+input {
+    /* To make sure that all text fields have the same font settings.
+        By default, textareas have a monospace font */
+    font: 1em sans-serif;
+    /* Uniform text field size */
+    min-width: 250px;
+    box-sizing: border-box;
+    /* Match form field borders */
+    border: 1px solid #999;
+}
+
+input:focus {
+    /* Additinal highlight for focused elements */
+    border-color: #000;
+}
+
+select {
+    min-width: 250px;
+}
+
+.waiver_input {
+    min-width: 100px;;
+}
+
+input[type='checkbox'] {
+    min-width: 20px;
+}
+
+input[type='radio'] {
+    min-width: 20px;
+}
+
+.recovery_label {
+    min-width: 150px;
+}
+
+.checkbox_label {
+    text-align: left;
+    padding-right: 0px;
+}
+
+.recovery_input {
+    min-width: 150px;
+    width: 150px;
+}
+
+.weathercock_data p {
+    /* Top Right Bottom Left */
+    padding: 0 0 0 0;
+    margin: 0;
+}
+
+.weathercock_table_header {
+    border: 2px solid #000;
+    background-color: #ddd;
+    margin: 0;
+    font-weight: bold;
+    text-align: center;
+    display: inline-block;
+    min-height: 20px;
+    min-width: 130px;
+    padding-right: 5px;
+}
+
+.weathercock_table_label {
+    border: 2px solid #000;
+    background-color: #ddd;
+    margin: 0;
+    text-align: center;
+    display: inline-block;
+    min-height: 20px;
+    min-width: 130px;
+    padding-right: 5px;
+}
+
+.weathercock_table {
+    border: 2px solid #000;
+    margin: 0;
+    min-width: 139px;
+    text-align: center;
+}
