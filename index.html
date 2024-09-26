@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en-US">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width">
+        <title>GPS DriftCast Alpha</title>
+
+        <link rel="apple-touch-icon" sizes="180x180" href="./images/apple-touch-icon.png">
+        <link rel="icon" type="image/png" sizes="32x32" href="./images/favicon-32x32.png">
+        <link rel="icon" type="image/png" sizes="16x16" href="./images/favicon-16x16.png">
+        <link rel="manifest" href="./images/site.webmanifest">
+
+        <link rel="stylesheet" href="styles.css" />
+    </head>
+    <body>
+        <h1>GPS DriftCast Alpha</h1>
+        <fieldset class="fieldset_location">
+            <legend>Location</legend>
+            <p>
+                <select name="select_launch_site" id="select_launch_site" disabled>
+                    <option value="no_saves">No Saved Launch Sites Found</option>
+                </select>
+            </p>
+            <p>
+                <label for="launch_site_name">Name</label>
+                <input type="text" name="launch_site_name" id="launch_site_name" />
+            </p>
+            <p>
+                <label for="launch_site_latitude">*Latitude</label>
+                <input type="number" name="launch_site_latitude" id="launch_site_latitude" value="" step="0.1" placeholder="30.614631"/>
+            </p>
+            <p>
+                <label for="launch_site_longitude">*Longitude</label>
+                <input type="number" name="launch_site_longitude" id="launch_site_longitude" value="" step="0" placeholder="-97.495914"/>
+            </p>
+            <fieldset>
+                <legend>Waiver</legend>
+                <p>
+                    <label for="waiver_latitude">Latitude</label>
+                    <input type="number" class="waiver_input" name="waiver_latitude" id="waiver_latitude" value="" step="0.1" placeholder="30.614167"/>
+                </p>
+                <p>
+                    <label for="waiver_longitude">Longitude</label>
+                    <input type="number" class="waiver_input" name="waiver_longitude" id="waiver_longitude" value="" step="0.1" placeholder="-97.497501"/>
+                </p>
+                <p>
+                    <label for="waiver_radius">Radius</label>
+                    <input type="number" class="waiver_input" name="waiver_radius" id="waiver_radius" placeholder="(nautical miles)"/>
+                </p>
+                <input type="hidden" name="waiver_altitude" id="waiver_altitude" value="0"/>
+                <input type="hidden" name="launch_site_elevation" id="launch_site_elevation" value="-1" />
+            </fieldset>
+            <p>
+                <button type="button" id="btn_site_cancel" hidden>Cancel</button>
+                <button type="button" id="btn_site_save">Save</button>
+                <button type="button" id="btn_site_edit" hidden>Edit</button>
+                <button type="button" id="btn_site_delete" hidden>Delete</button>
+                <button type="button" id="btn_site_new" hidden>New</button>
+            </p>
+        </fieldset>
+        <fieldset class="fieldset_launch">
+            <legend>Launch</legend>
+            <p>
+                <label for="launch_date">*Date</label>
+                <input type="date" name="launch_date" id="launch_date" />
+            </p>
+            <p>
+                <label for="start_time">*Start Time</label>
+                <input type="time" name="start_time" id="start_time" />
+            </p>
+            <p>
+                <label for="end_time">*End Time</label>
+                <input type="time" name="end_time" id="end_time" />
+            </p>
+            <p>
+                <fieldset>
+                    <legend>Recovery</legend>
+                    <p>
+                        <div>
+                            <label for="single_deploy" class="radio_label">Single Deploy</label>
+                            <input type="radio" id="single_deploy" name="deploy_mode" value="single_deploy" checked />
+                            <label for="dual_deploy" class="radio_label">Dual Deploy</label>
+                            <input type="radio" id="dual_deploy" name="deploy_mode" value="dual_deploy" />
+                        </div>
+                    </p>
+                    <p>
+                        <label for="launch_apogee" class="recovery_label">*Apogee</label>
+                        <input type="number" class="recovery_input" name="launch_apogee" id="launch_apogee" placeholder="(ft AGL)" />
+                    </p>
+                    <p>
+                        <label for="decent_rate_main" class="recovery_label">*Main Descent (ft/s)</label>
+                        <input type="number" class="recovery_input" name="decent_rate_main" id="decent_rate_main" value="20" />
+                    </p>
+                    <p>
+                        <label for="main_event_altitude" class="recovery_label">Main Event (ft AGL)</label>
+                        <input type="number" class="recovery_input" name="main_event_altitude" id="main_event_altitude" placeholder="N/A" disabled/>
+                    </p>
+                    <p>
+                        <label for="decent_rate_drogue" class="recovery_label">Drogue Decent (ft/s)</label>
+                        <input type="number" class="recovery_input" name="decent_rate_drogue" id="decent_rate_drogue" placeholder="N/A" disabled/>
+                    </p>
+                </fieldset>
+            </p>
+        </fieldset>
+        <br>
+        <p>
+            <input type="checkbox" name="apply_weathercocking" id="apply_weathercocking" />
+            <label class="checkbox_label" for="apply_weathercocking">Apply Weathercocking</label>
+        </p>
+        <div class="weathercock_data" id="weathercock_data" hidden>
+            <p>
+                <span class="weathercock_table_header">Wind Speed (mph)</span>
+                <span class="weathercock_table_header">Distance (ft)</span>
+                <span class="weathercock_table_header">Apogee (ft AGL)</span>
+            </p>
+            <p>
+                <span class="weathercock_table_label">5</span>
+                <input type="number" class="weathercock_table" name="weathercock_distance_five" id="weathercock_distance_five" value="0" />
+                <input type="number" class="weathercock_table" name="weathercock_apogee_five" id="weathercock_apogee_five" value="0" />
+            </p>
+            <p>
+                <span class="weathercock_table_label">10</span>
+                <input type="number" class="weathercock_table" name="weathercock_distance_ten" id="weathercock_distance_ten" value="0" />
+                <input type="number" class="weathercock_table" name="weathercock_apogee_ten" id="weathercock_apogee_ten" value="0" />
+            </p>
+            <p>
+                <span class="weathercock_table_label">15</span>
+                <input type="number" class="weathercock_table" name="weathercock_distance_fifteen" id="weathercock_distance_fifteen" value="0" />
+                <input type="number" class="weathercock_table" name="weathercock_apogee_fifteen" id="weathercock_apogee_fifteen" value="0" />
+            </p>
+            <p>
+                <span class="weathercock_table_label">20</span>
+                <input type="number" class="weathercock_table" name="weathercock_distance_twenty" id="weathercock_distance_twenty" value="0" />
+                <input type="number" class="weathercock_table" name="weathercock_apogee_twenty" id="weathercock_apogee_twenty" value="0" />
+            </p>
+        </div>
+        <br>
+        <div>
+            <button type="button" id="btn_calculate_drift">Calculate Drift</button>
+        </div>
+        <br>
+        <div>
+            <button type="button" id="btn_save_landing_plot" disabled="true">Save Landing Plots</button>
+            <button type="button" id="btn_save_flight_plot" disabled="true">Save Flight Plots</button>
+        </div>
+        <div id="map"></div>
+        <script type="module" src="main.js"></script>
+    </body>
+</html>
