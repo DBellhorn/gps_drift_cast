@@ -199,15 +199,44 @@ class LaunchSimulationData {
     #elevation;
 
     /**
+     * Average wind speed (MPH) at ground level.
+     * @private
+     * @type {number}
+     */
+    #groundWindSpeed;
+
+    /**
+     * Average wind direction (0 degrees from North) at ground level.
+     * @private
+     * @type {number}
+     */
+    #groundWindDirection;
+
+    /**
+     * Indicates if the wind forecast was generated with the RAP or Open-Meteo model.
+     * @private
+     * @type {boolean}
+     */
+    #usingRapModel;
+
+    /**
      * Initializes a location using the provided latitude and longitude coordinates.
      * @param {number} ele - The elevation (feet) of the launch site.
      * @param {number} hour - The time (hour as 0 - 23) this launch occurs.
+     * @param {number} gndWindSpeed - The average wind speed (MPH) at ground level.
+     * @param {number} gndWindDir - The average wind direction (0 degrees from North) at ground level.
+     * @param {boolean} usingRap - Indicates if the wind forecast was generated with the RAP or Open-Meteo model.
      * @throws {TypeError} Invalid time.
      */
-    constructor(ele, hour) {
+    constructor(ele, hour, gndWindSpeed, gndWindDir, usingRap) {
         if (isNaN(ele)) throw new TypeError(`Invalid elevation: ${ele}`);
         if (isNaN(hour)) throw new TypeError(`Invalid hour: ${hour}`);
+        if (isNaN(gndWindSpeed)) throw new TypeError(`Invalid ground wind speed: ${gndWindSpeed}`);
+        if (isNaN(gndWindDir)) throw new TypeError(`Invalid ground wind direction: ${gndWindDir}`);
         this.#time = hour;
+        this.#groundWindSpeed = gndWindSpeed;
+        this.#groundWindDirection = gndWindDir;
+        this.#usingRapModel = usingRap;
 
         if (ele >= 0) {
             this.#elevation = ele;
@@ -235,6 +264,18 @@ class LaunchSimulationData {
     get elevation() { return this.#elevation; }
 
     /**
+     * Average wind speed (MPH) at ground level.
+     * @type {number}
+     */
+    get groundWindSpeed() { return this.#groundWindSpeed; }
+
+    /**
+     * Average wind direction (0 degrees from North) at ground level.
+     * @type {number}
+     */
+    get groundWindDirection() { return this.#groundWindDirection; }
+
+    /**
      * Append a new launch path point to this simulation's list.
      * @param {number} alt - The altitude (feet) of a point along the rocket's path.
      * @param {GeoLocation} launchPathPoint - The coordinates of a point along the rocket's path.
@@ -243,6 +284,31 @@ class LaunchSimulationData {
         if (null != launchPathPoint && !isNaN(alt)) {
             this.#launchPath.push(new LaunchPathPoint(alt, launchPathPoint));
         }
+    }
+
+    /**
+     * Get just the coordinates from where the rocket launched.
+     * @returns {GeoLocation} Coordinates of the launch location if available. Otherwise null.
+     */
+    getLaunchLocation() {
+        if (0 == this.#launchPath.length) {
+            return null;
+        }
+        return this.#launchPath[0].location;
+    }
+
+    /**
+     * Get just the coordinates at the rocket's maximum altitude.
+     * @returns {GeoLocation} Coordinates of the rocket's apogee if available. Otherwise null.
+     */
+    getApogeeLocation() {
+        for (let i = 1; i < this.#launchPath.length; ++i) {
+            // Find the launch path point where the rocket first starts moving downward.
+            if (this.#launchPath[i].altitude < this.#launchPath[i - 1].altitude) {
+                return this.#launchPath[i - 1].location;
+            }
+        }
+        return null;
     }
 
     /**
@@ -269,6 +335,29 @@ class LaunchSimulationData {
             return `${this.time - 12}PM`;
         }
         return `${this.#time}AM`;
+    }
+
+    /**
+     * Provides the rocket's apogee (feet) if available. Zero if not.
+     * @returns {number} Integer representation of the rocket's apogee (feet).
+     */
+    getApogee() {
+        let apogee = 0;
+
+        for (let i = 0; i < this.#launchPath.length; ++i) {
+            if (this.#launchPath[i].altitude > apogee) {
+                apogee = this.#launchPath[i].altitude;
+            }
+        }
+        return Math.round(apogee);
+    }
+
+    /**
+     * Provides the name of which wind forecast model produced the data used.
+     * @returns {string} Name of the wind forecast model.
+     */
+    getWindModelName() {
+        return this.#usingRapModel ? 'RAP' : 'Open-Meteo';
     }
 }
 

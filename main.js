@@ -1,4 +1,4 @@
-import { GeoLocation, feetToMeters, metersToFeet, moveAlongBearing } from "./geo.js";
+import { GeoLocation, feetToMeters, metersToFeet, moveAlongBearing, distanceBetweenLocations } from "./geo.js";
 import { saveLandingScatter, saveFlightScatter } from "./kml.js";
 import { LaunchTimeData, LaunchPathPoint, LaunchSimulationData, DescentData } from "./launch.js";
 import { WindAtAltitude, WindForecastData, WeathercockWindData } from "./wind.js";
@@ -533,6 +533,128 @@ function resetLaunchSiteDisplay() {
 }
 
 /**
+ * Creates a table for display of drifting calucation results if one does not exist.
+ * If one does exist, it clears all previous contents before adding the latest data.
+ * @param {Array.<LaunchSimulationData>} launchList - A new table row will be added for each launch.
+ */
+function updateDriftResultTable(launchList) {
+    const driftResultTable = document.getElementById('drift_result_table');
+    driftResultTable.hidden = false;
+
+    // Remove any data on display from previous drift calculations.
+    const previousDriftData = driftResultTable.querySelector('tbody');
+    if (null != previousDriftData) {
+        driftResultTable.removeChild(previousDriftData);
+    }
+
+    // Create a new tbody to hold our latest drift result data.
+    const driftResultBody = document.createElement('tbody');
+
+    // creating all cells
+    for (let i = 0; i < launchList.length; ++i) {
+        // Creates a new row for our table.
+        const row = document.createElement('tr');
+
+        // Launch window start time.
+        const timeCell = document.createElement('td');
+        timeCell.appendChild(document.createTextNode(`${launchList[i].getLaunchTime()}`));
+        row.appendChild(timeCell);
+
+        // Wind forecast model.
+        const windModelCell = document.createElement('td');
+        windModelCell.appendChild(document.createTextNode(`${launchList[i].getWindModelName()}`));
+        row.appendChild(windModelCell);
+
+        // Average wind speed at ground level.
+        const groundWindSpeed = Math.round(Math.abs(launchList[i].groundWindSpeed));
+        const windSpeedCell = document.createElement('td');
+
+        // Indicate level of safety by transitioning background color from green to yellow to red.
+        switch (groundWindSpeed) {
+            case 0:
+            case 1:
+            case 2:
+                windSpeedCell.style.background = '#32CD32';
+                break;
+            case 3:
+            case 4:
+                windSpeedCell.style.background = '#00FF00';
+                break;
+            case 5:
+            case 6:
+                windSpeedCell.style.background = '#40ff00';
+                break;
+            case 7:
+            case 8:
+                windSpeedCell.style.background = '#80ff00';
+                break;
+            case 9:
+            case 10:
+                windSpeedCell.style.background = '#bfff00';
+                break;
+            case 11:
+            case 12:
+                windSpeedCell.style.background = '#ffff00';
+                break;
+            case 13:
+            case 14:
+                windSpeedCell.style.background = '#ffbf00';
+                break;
+            case 15:
+            case 16:
+                windSpeedCell.style.background = '#ff8000';
+                break;
+            case 17:
+            case 18:
+            case 19:
+                windSpeedCell.style.background = '#ff4000';
+                break;
+            default:
+                windSpeedCell.style.background = '#ff0000';
+                break;
+        }
+        windSpeedCell.appendChild(document.createTextNode(`${groundWindSpeed}`));
+        row.appendChild(windSpeedCell);
+
+        // Average wind direction at ground level.
+        const windDirectionCell = document.createElement('td');
+        windDirectionCell.appendChild(document.createTextNode(`${Math.round(launchList[i].groundWindDirection)}`));
+        row.appendChild(windDirectionCell);
+
+        // Apogee of the rocket.
+        const apogeeCell = document.createElement('td');
+        apogeeCell.appendChild(document.createTextNode(`${launchList[i].getApogee()}`));
+        row.appendChild(apogeeCell);
+
+        // Distance the rocket weathercocked.
+        const weathercockDistanceCell = document.createElement('td');
+        const launchPosition = launchList[i].getLaunchLocation();
+        const apogeePosition = launchList[i].getApogeeLocation();
+        let weathercockDist = 0;
+        if (null != launchPosition && null != apogeePosition) {
+            weathercockDist = Math.round(metersToFeet(distanceBetweenLocations(launchPosition, apogeePosition)));
+        }
+        weathercockDistanceCell.appendChild(document.createTextNode(`${weathercockDist}`));
+        row.appendChild(weathercockDistanceCell);
+
+        // Distance from the launch pad to where the rocket landed.
+        const driftDistanceCell = document.createElement('td');
+        const landingPosition = launchList[i].getLandingLocation();
+        let driftDist = 0;
+        if (null != launchPosition && null != landingPosition) {
+            driftDist = Math.round(metersToFeet(distanceBetweenLocations(launchPosition, landingPosition)));
+        }
+        driftDistanceCell.appendChild(document.createTextNode(`${driftDist}`));
+        row.appendChild(driftDistanceCell);
+
+        driftResultBody.appendChild(row);
+    }
+
+    // Place our new body full of drift result data into the table.
+    driftResultTable.appendChild(driftResultBody);
+}
+
+/**
  * Fired when the whole page has loaded, including all dependent resources except
  * those that are loaded lazily.
  */
@@ -939,6 +1061,7 @@ window.onload = () => {
             // Allow the user to save now that valid drift and landing data is available.
             document.getElementById(btnSaveLandingPlots).disabled = false;
             document.getElementById(btnSaveFlightPlots).disabled = false;
+            updateDriftResultTable(launchSimulationList);
         } else {
             console.debug(`Skipping writing a landing plot KML file since no simulation data was returned.`);
         }
@@ -1007,7 +1130,7 @@ window.onload = () => {
     
     const headerOneElement = document.querySelector('h1');
     if (null != headerOneElement) {
-        headerOneElement.textContent = 'GPS DriftCast 0.2p';
+        headerOneElement.textContent = 'GPS DriftCast 0.3a';
     }
 }
 
@@ -1197,7 +1320,7 @@ async function calculateLandingPlots() {
     // Default to using the launch site's location for our apogee position
     const launchLocation = getLaunchSiteLocation();
     if (null == launchLocation) {
-        console.alert('Unable to get wind forecast without valid launch site coordinates.');
+        window.alert('Unable to get wind forecast without valid launch site coordinates.');
         return simulationList;
     }
 
@@ -1393,7 +1516,11 @@ async function calculateLandingPlots() {
         currentDescentRate = descentList[0].descentRate;
 
         // Create an object to hold this simulation's results now that we have some data
-        const launchSimulation = new LaunchSimulationData(launchSiteElevation, launchTimes.launchDate.getHours() + currentOffset - launchTimes.startHourOffset);
+        const launchSimulation = new LaunchSimulationData(launchSiteElevation,
+                                                    launchTimes.launchDate.getHours() + currentOffset - launchTimes.startHourOffset,
+                                                    groundWindSpeed,
+                                                    groundWindDirection,
+                                                    'RAP' == windForecast.model);
 
         // Begin by adding the launch site and apogee
         launchSimulation.addLaunchPathPoint(0, launchLocation);

@@ -138,5 +138,34 @@ function moveAlongBearingKilometers(geoPosition, distance, bearing) {
     geoPosition.longitude = radiansToDegrees(longitudeRadians + Math.atan2(y, x));
 }
 
+/**
+ * Calculates the distance (meters) between two GeoLocations. The ‘haversine’ formula is used
+ * to calculate the shortest distance over the earth’s spherical surface.
+ * @param {GeoLocation} locationA - First location.
+ * @param {GeoLocation} locationB - Second location.
+ * @returns {number} - Distance (meters) between the two specified locations.
+ */
+function distanceBetweenLocations(locationA, locationB) {
+    // Convert the coordinate components from degrees to radians
+    const latitudeA = degreesToRadians(locationA.latitude);
+    const longitudeA = degreesToRadians(locationA.longitude);
+    const latitudeB = degreesToRadians(locationB.latitude);
+    const longitudeB = degreesToRadians(locationB.longitude);
+
+    const latitudeDelta= latitudeB - latitudeA;
+    const longitudeDelta = longitudeB - longitudeA;
+
+    // Calculate the square of half the chord length between the points.
+    let a = Math.sin(latitudeDelta / 2.0);
+    a *= a;
+    a += (Math.cos(latitudeA) * Math.cos(latitudeB) * Math.sin(longitudeDelta / 2.0)* Math.sin(longitudeDelta / 2.0));
+
+    // Now we can calculate the angular distance in radians.
+    const c = 2.0 * Math.atan2(Math.sqrt(a), Math.sqrt(1.0 - a));
+
+    // Finally we multiply by the mean radius of earth in metres.
+    return c * 6371000.0;
+}
+
 export { GeoLocation };
-export { feetToMeters, metersToFeet, moveAlongBearing, moveAlongBearingKilometers };
+export { feetToMeters, metersToFeet, moveAlongBearing, moveAlongBearingKilometers, distanceBetweenLocations };

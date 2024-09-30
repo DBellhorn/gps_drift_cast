@@ -3,7 +3,7 @@
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width">
-        <title>GPS DriftCast Alpha</title>
+        <title>GPS DriftCast</title>
 
         <link rel="apple-touch-icon" sizes="180x180" href="./images/apple-touch-icon.png">
         <link rel="icon" type="image/png" sizes="32x32" href="./images/favicon-32x32.png">
@@ -13,7 +13,7 @@
         <link rel="stylesheet" href="styles.css" />
     </head>
     <body>
-        <h1>GPS DriftCast Alpha</h1>
+        <h1>GPS DriftCast Beta</h1>
         <fieldset class="fieldset_location">
             <legend>Location</legend>
             <p>
@@ -143,7 +143,25 @@
             <button type="button" id="btn_save_landing_plot" disabled="true">Save Landing Plots</button>
             <button type="button" id="btn_save_flight_plot" disabled="true">Save Flight Plots</button>
         </div>
-        <div id="map"></div>
+        <br>
+        <div>
+            <table id="drift_result_table" hidden>
+                <thead>
+                    <tr>
+                        <th rowspan="2">Time</th>
+                        <th rowspan="2">Model</th>
+                        <th colspan="2">Avg Surface Wind</th>
+                        <th rowspan="2">Apogee (ft)</th>
+                        <th rowspan="2">Weathercock (ft)</th>
+                        <th rowspan="2">Landing (ft)</th>
+                    </tr>
+                    <tr>
+                        <th>Speed (MPH)</th>
+                        <th>Dir (0° North)</th>
+                    </tr>
+                </thead>
+            </table>
+        </div>
         <script type="module" src="main.js"></script>
     </body>
 </html>
