@@ -184,12 +184,12 @@ function createFlightPathBlob(launchLocation, waiverLocation, waiverRadius, laun
         
         // flight path coordinates
         stringArray.push(`      <LineString>\n`);
-        stringArray.push(`        <altitudeMode>absolute</altitudeMode>\n`);
+        stringArray.push(`        <altitudeMode>relativeToGround</altitudeMode>\n`);
         stringArray.push(`        <tessellate>1</tessellate>\n`);
         stringArray.push(`        <coordinates>\n`);
         for (let pathIndex = 0; pathIndex < launchSimulationList[index].launchPath.length; ++pathIndex) {
             const pathPoint = launchSimulationList[index].launchPath[pathIndex];
-            const altitude = feetToMeters(launchSimulationList[index].elevation + pathPoint.altitude);
+            const altitude = feetToMeters(pathPoint.altitude);
             stringArray.push(`          ${pathPoint.location.longitude},${pathPoint.location.latitude},${altitude.toFixed(2)}\n`);
         }
         stringArray.push(`        </coordinates>\n`);
