@@ -41,6 +41,10 @@ const btnCalculateDrift = 'btn_calculate_drift';
 const btnSaveLandingPlots = 'btn_save_landing_plot';
 const btnSaveFlightPlots = 'btn_save_flight_plot';
 
+// Drift result display IDs
+const imgStaticMapId = 'img_static_map';
+const driftResultTableId = 'drift_result_table';
+
 // Hold an instance of a db object for us to store the IndexedDB data in
 let dbLaunchSites = null;
 
@@ -537,8 +541,65 @@ function resetLaunchSiteDisplay() {
  * If one does exist, it clears all previous contents before adding the latest data.
  * @param {Array.<LaunchSimulationData>} launchList - A new table row will be added for each launch.
  */
+function updateStaticLandingScatterImage(launchList) {
+    const staticMapImage = document.getElementById(imgStaticMapId);
+    staticMapImage.hidden = false;
+
+    // The beginning of the URL does not change.
+    let staticMapUrl = 'https://maps.googleapis.com/maps/api/staticmap';
+
+    // Might want to change the resolution to match narrow screens in the future.
+    staticMapUrl += '?size=640x640';
+
+    if (launchList.length > 0) {
+        // Assuming the launch location is identical for all simulations in the list.
+        const launchPosition = launchList[0].getLaunchLocation();
+        staticMapUrl += `&markers=color:red%7C${launchPosition.latitude.toFixed(6)},${launchPosition.longitude.toFixed(6)}`;
+    }
+
+    // Append a marker for each time slot.
+    for (let i = 0; i < launchList.length; ++i) {
+        // Remove the AM and PM designators from our time strings.
+        const fullLaunchTime = launchList[i].getLaunchTime();
+
+        // Standard markers only allow single digits, so use custom icons for 10, 11, and 12.
+        if (3 == fullLaunchTime.length) {
+            staticMapUrl += `&markers=color:yellow%7Clabel:${fullLaunchTime.slice(0,1)}`;
+        } else {
+            let customIcon = '';
+            const hourNumber = parseInt(fullLaunchTime.slice(0, 2));
+            if (10 == hourNumber) {
+                customIcon = 'https://tinyurl.com/yc72jmrh';
+            } else if (11 == hourNumber) {
+                customIcon = 'https://tinyurl.com/3wzruytk';
+            } else if (12 == hourNumber) {
+                customIcon = 'https://tinyurl.com/r36ztvue';
+            }
+
+            if (customIcon.length > 0) {
+                staticMapUrl += `&markers=icon:${customIcon}`;
+            } else {
+                continue;
+            }
+        }
+
+        const landingPosition = launchList[i].getLandingLocation();
+        staticMapUrl += `%7C${landingPosition.latitude.toFixed(6)},${landingPosition.longitude.toFixed(6)}`;
+    }
+
+    // Final pieces are map type and Google Maps API Key
+    staticMapUrl += '&maptype=hybrid&key=AIzaSyDKpJz8iJSGDY-WqCWyO1fKQkXbtn7sYqQ';
+
+    staticMapImage.src = staticMapUrl;
+}
+
+/**
+ * Creates a table for display of drifting calucation results if one does not exist.
+ * If one does exist, it clears all previous contents before adding the latest data.
+ * @param {Array.<LaunchSimulationData>} launchList - A new table row will be added for each launch.
+ */
 function updateDriftResultTable(launchList) {
-    const driftResultTable = document.getElementById('drift_result_table');
+    const driftResultTable = document.getElementById(driftResultTableId);
     driftResultTable.hidden = false;
 
     // Remove any data on display from previous drift calculations.
@@ -1055,12 +1116,17 @@ window.onload = () => {
         document.getElementById(btnSaveLandingPlots).disabled = true;
         document.getElementById(btnSaveFlightPlots).disabled = true;
 
+        // Hide any previous drift results.
+        document.getElementById(imgStaticMapId).hidden = true;
+        document.getElementById(driftResultTableId).hidden = true;
+
         // Calculate new drift and landing results
         launchSimulationList = await calculateLandingPlots();
         if (launchSimulationList.length > 0) {
             // Allow the user to save now that valid drift and landing data is available.
             document.getElementById(btnSaveLandingPlots).disabled = false;
             document.getElementById(btnSaveFlightPlots).disabled = false;
+            updateStaticLandingScatterImage(launchSimulationList);
             updateDriftResultTable(launchSimulationList);
         } else {
             console.debug(`Skipping writing a landing plot KML file since no simulation data was returned.`);
@@ -1130,7 +1196,7 @@ window.onload = () => {
     
     const headerOneElement = document.querySelector('h1');
     if (null != headerOneElement) {
-        headerOneElement.textContent = 'GPS DriftCast 0.3a';
+        headerOneElement.textContent = 'GPS DriftCast 0.4';
     }
 }
 
