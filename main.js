@@ -4,6 +4,8 @@ import { LaunchTimeData, LaunchPathPoint, LaunchSimulationData, DescentData } fr
 import { WindAtAltitude, WindForecastData, WeathercockWindData } from "./wind.js";
 import { getWindPredictionData, getWindBandPercentage, getAverageWindSpeed, getAverageWindDirection, driftWithWind } from "./wind.js";
 
+const googleMapApiKey = 'YOUR_API_KEY';
+
 
 // Declare some ID strings so they do not have to be in-line everywhere
 const launchSiteNameId = 'launch_site_name';
@@ -588,7 +590,7 @@ function updateStaticLandingScatterImage(launchList) {
     }
 
     // Final pieces are map type and Google Maps API Key
-    staticMapUrl += '&maptype=hybrid&key=AIzaSyDKpJz8iJSGDY-WqCWyO1fKQkXbtn7sYqQ';
+    staticMapUrl += `&maptype=hybrid&key=${googleMapApiKey}`;
 
     staticMapImage.src = staticMapUrl;
 }
