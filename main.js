@@ -255,53 +255,6 @@ function verifyLaunchSiteData() {
             return false;
         }
     }
-
-    // Everything looks good so far.  Let's double check the non-required fields
-    // do not contain invalid values before saving them to the database.
-    const elementWaiverLatitude = document.getElementById(waiverLatitudeId);
-    if (!isNumeric(elementWaiverLatitude.value)) {
-        elementWaiverLatitude.focus();
-        if (false == window.confirm('The waiver latitude is not a number.  Do you wish to continue?')) {
-            return false;
-        }
-    }
-    let waiverLatitude = parseFloat(elementWaiverLatitude.value);
-    if (waiverLatitude < -90 || waiverLatitude > 90) {
-        elementWaiverLatitude.focus();
-        if (false == window.confirm('The waiver latitude is not within the valid range. Do you wish to continue?')) {
-            return false;
-        }
-    }
-
-    const elementWaiverLongitude = document.getElementById(waiverLongitudeId);
-    if (!isNumeric(elementWaiverLongitude.value)) {
-        elementWaiverLongitude.focus();
-        if (false == window.confirm('The waiver longitude is not a number.  Do you wish to continue?')) {
-            return false;
-        }
-    }
-    let waiverLongitude = parseFloat(elementWaiverLongitude.value);
-    if (waiverLongitude < -180 || waiverLongitude > 180) {
-        elementWaiverLongitude.focus();
-        if (false == window.confirm('The waiver longitude is not within the valid range. Do you wish to continue?')) {
-            return false;
-        }
-    }
-
-    const elementWaiverRadius = document.getElementById(waiverRadiusId);
-    if (elementWaiverRadius.value.length > 0 && !isNumeric(elementWaiverRadius.value)) {
-        elementWaiverRadius.focus();
-        if (false == window.confirm('The waiver radius is not a number. Do you wish to continue?')) {
-            return false;
-        }
-    }
-    let wavierRadius = parseFloat(elementWaiverRadius.value);
-    if (wavierRadius < 0.0) {
-        elementWaiverRadius.focus();
-        if (false == window.confirm('The waiver radius is a negative number. Do you wish to continue?')) {
-            return false;
-        }
-    }
     return true;
 }
 
@@ -327,21 +280,19 @@ function saveLaunchSiteToDb() {
         return false;
     }
 
+    // Change to a known invalid value for easier checks upon loading.
     let waiverLatitude = parseFloat(document.getElementById(waiverLatitudeId).value);
-    if (waiverLatitude < -90 || waiverLatitude > 90) {
-        console.debug(`Waiver latitude ${waiverLatitude} is not valid. Defaulting to launch site latitude ${launchSiteLocation.latitude}.`);
-        waiverLatitude = launchSiteLocation.latitude;
+    if (isNaN(waiverLatitude) || waiverLatitude < -90.0 || waiverLatitude > 90.0) {
+        waiverLatitude = 360.0;
     }
 
     let waiverLongitude = parseFloat(document.getElementById(waiverLongitudeId).value);
-    if (waiverLongitude < -180 || waiverLongitude > 180) {
-        console.debug(`Waiver longitude ${waiverLongitude} is not valid. Defaulting to launch site longitude ${launchSiteLocation.longitude}.`);
-        waiverLongitude = launchSiteLocation.longitude;
+    if (isNaN(waiverLongitude) || waiverLongitude < -180.0 || waiverLongitude > 180.0) {
+        waiverLongitude = 360.0;
     }
 
     let wavierRadius = parseFloat(document.getElementById(waiverRadiusId).value);
     if (wavierRadius < 0.0) {
-        console.debug(`Waiver radius ${wavierRadius} is not valid.`);
         wavierRadius = 0.0;
     }
 
@@ -521,10 +472,29 @@ function updateLaunchSiteDisplay(dbCursor) {
     document.getElementById(launchSiteLatitudeId).value = dbCursor.latitude;
     document.getElementById(launchSiteLongitudeId).value = dbCursor.longitude;
     document.getElementById(launchSiteElevationId).value = dbCursor.elevation;
-    document.getElementById(waiverLatitudeId).value = dbCursor.waiver_latitude;
-    document.getElementById(waiverLongitudeId).value = dbCursor.waiver_longitude;
-    document.getElementById(waiverRadiusId).value = dbCursor.waiver_radius;
-    document.getElementById(waiverAltitudeId).value = dbCursor.waiver_altitude;
+
+    // Switch to default display if waiver data has not been saved.
+    if (isNaN(dbCursor.waiver_latitude)) {
+        document.getElementById(waiverLatitudeId).value = '';
+    } else if (dbCursor.waiver_latitude < -90.0 || dbCursor.waiver_latitude > 90.0) {
+        document.getElementById(waiverLatitudeId).value = '';
+    } else {
+        document.getElementById(waiverLatitudeId).value = dbCursor.waiver_latitude;
+    }
+
+    if (isNaN(dbCursor.waiver_longitude)) {
+        document.getElementById(waiverLongitudeId).value = '';
+    } else if (dbCursor.waiver_longitude < -180.0 || dbCursor.waiver_longitude > 180.0) {
+        document.getElementById(waiverLongitudeId).value = '';
+    } else {
+        document.getElementById(waiverLongitudeId).value = dbCursor.waiver_longitude;
+    }
+
+    if (isNaN(dbCursor.waiver_altitude || dbCursor.waiver_altitude <= 0.0)) {
+        document.getElementById(waiverAltitudeId).value = '';
+    } else {
+        document.getElementById(waiverAltitudeId).value = dbCursor.waiver_altitude;
+    }
 }
 
 /** Return all launch site related UI fields back to their default display values. */
@@ -571,11 +541,11 @@ function updateStaticLandingScatterImage(launchList) {
             let customIcon = '';
             const hourNumber = parseInt(fullLaunchTime.slice(0, 2));
             if (10 == hourNumber) {
-                customIcon = 'https://tinyurl.com/yc72jmrh';
+                customIcon = 'https://davidbellhorn.com/DriftCast/images/ten.png';
             } else if (11 == hourNumber) {
-                customIcon = 'https://tinyurl.com/3wzruytk';
+                customIcon = 'https://davidbellhorn.com/DriftCast/images/eleven.png';
             } else if (12 == hourNumber) {
-                customIcon = 'https://tinyurl.com/r36ztvue';
+                customIcon = 'https://davidbellhorn.com/DriftCast/images/twelve.png';
             }
 
             if (customIcon.length > 0) {
@@ -955,15 +925,13 @@ window.onload = () => {
                 }
                 let waiverLatitude = parseFloat(document.getElementById(waiverLatitudeId).value);
                 if (isNaN(waiverLatitude) || (Math.abs(waiverLatitude) > 90)) {
-                    console.debug(`Changing wavier latitude to zero for save due to an invalid value: ${waiverLatitude}`);
-                    waiverLatitude = 0.0;
-                    waiverRadius = 0.0;
+                    console.debug(`Replacing wavier latitude for save due to an invalid value: ${waiverLatitude}`);
+                    waiverLatitude = 360.0;
                 }
                 let waiverLongitude = parseFloat(document.getElementById(waiverLongitudeId).value);
                 if (isNaN(waiverLongitude) || (Math.abs(waiverLongitude) > 180)) {
-                    console.debug(`Changing wavier longitude to zero for save due to an invalid value: ${waiverLongitude}`);
-                    waiverLongitude = 0.0;
-                    waiverRadius = 0.0;
+                    console.debug(`Replacing wavier longitude for save due to an invalid value: ${waiverLongitude}`);
+                    waiverLongitude = 360.0;
                 }
 
                 // Update the database cursor's members
@@ -1198,7 +1166,7 @@ window.onload = () => {
     
     const headerOneElement = document.querySelector('h1');
     if (null != headerOneElement) {
-        headerOneElement.textContent = 'GPS DriftCast 0.4';
+        headerOneElement.textContent = 'GPS DriftCast 0.5c';
     }
 }
 
