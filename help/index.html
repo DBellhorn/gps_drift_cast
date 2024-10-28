@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en-US">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width">
+        <title>GPS DriftCast Help</title>
+
+        <link rel="apple-touch-icon" sizes="180x180" href="../images/apple-touch-icon.png">
+        <link rel="icon" type="image/png" sizes="32x32" href="../images/favicon-32x32.png">
+        <link rel="icon" type="image/png" sizes="16x16" href="../images/favicon-16x16.png">
+        <link rel="manifest" href="../images/site.webmanifest">
+
+        <link rel="stylesheet" href="styles.css" />
+    </head>
+    <body>
+        <h1>GPS DriftCast Help</h1>
+        <div>
+            <h2>General</h2>
+            <p>GPS DriftCast estimates rocket landing locations.  Required inputs are marked with an asterisk <b>*</b>.  Filling in just these fields will provide a rough estimate.  The more information you are able to provide, the better the results will be.</p>
+        </div>
+        <div>
+            <h2>Location</h2>
+            <img src="images/location_half.png" class="image_float_right">
+            <p>This section is used to identify where the place where the rocket will be launched.  Commonly used sites can be saved for easier use in the future.</p>
+            <p>Latitude and Longitude coordinates of the rocket's launch location are the only required fields for this section.  Club hosted launches often share these values.  They can also be found in most mapping software.</p>
+            <p>An example from Google Maps can be veiwed below.  Simply left click on the location to place a marker on the map.  A window will popup showing the latitude and longitude.</p>
+            <img src="images/google_coords_half.jpg" class="image_inline">
+        </div>
+        <hr>
+        <div>
+            <h3>Wavier</h3>
+            <p>High power launches in the USA must request a waiver from the FAA.  These define a volume of airspace that all rockets should stay inside.  GPS DriftCast can draw the waiver's outline in the Google Earth KML output files.  You will need to get the latitude, longitude, and radius from the club that obtained the waiver.</p>
+        </div>
+        <hr>
+        <div>
+            <h3>Saving Launch Sites</h3>
+            <p>Launch sites can be saved to avoid entering their coordinates in the future.</p>
+            <p>Each must be given a unique Name.  Latitude and Longitude are also required.  Waiver information is optional.</p>
+            <p>Simply click the Save button at the bottom of the Location section when the data is ready.</p>
+        </div>
+        <hr>
+        <div>
+            <h3>Loading Launch Sites</h3>
+            <p>All previously saved launch sites will be shown in the drop down list at the top of the Location section.  Simply select a different name from that list to load that launch site's data.  All input fields will be automatically filled with the data saved with that name.</p>
+            <img src="images/launch_site_select.png" class="image_inline">
+        </div>
+        <hr>
+        <div>
+            <h3>Adding Launch Sites</h3>
+            <p>You can set up a different launch site by clicking the New button.</p>
+            <img src="images/new_btn.png" class="image_inline">
+            <p>All of the data fields will switch to their default values.  They will also be editable to accept the new site's values.  Click the Save button if you want to remember this launch site.</p>
+            <img src="images/save_btn.png" class="image_inline">
+            <p>Or click the Cancel button if you decide the launch site is not worth saving.</p>
+            <img src="images/cancel_btn.png" class="image_inline">
+            <p>This is also a good way to obtain landing locations for a launch site you may only visit once.</p>
+        </div>
+        <hr>
+        <div>
+            <h3>Editing Launch Sites</h3>
+            <p>All launch data fields are disabled for saved sites.  If you need to change a value, begin by clicking the Edit button.</p>
+            <img src="images/edit_btn.png" class="image_inline">
+            <p>The data fields will now be switched to editing mode.  To save the modifications, simply click the Save button.</p>
+            <img src="images/save_btn.png" class="image_inline">
+            <p>If you instead realize the launch site was already perfect, simply click the Cancel button.</p>
+            <img src="images/cancel_btn.png" class="image_inline">
+            <p>Everything will go back to the way it was before triggering edit mode.</p>
+        </div>
+        <hr>
+        <div>
+            <h3>Deleting Launch Sites</h3>
+            <p>Losing a launch site due to land development is an all too often occurance due to urban sprawl.  Removing a launch site can be accomplished by clicking the Delete button.</p>
+            <img src="images/delete_btn.png" class="image_inline">
+            <p>A dialog will ask you to verify the deletion to ensure it was not an accidental click.</p>
+        </div>
+        <hr>
+        <div>
+            <h2>Launch</h2>
+            <p>This section collects details about the launch being simulated.  Most of the fields are required.  The only optional data deals with dual deployment recovery systems.</p>
+            <img src="images/launch_half.png" class="image_inline">
+        </div>
+        <hr>
+        <div>
+            <h3>Launch Date</h3>
+            <p>This is the date on which your rocket will be launched.  Data entry method will depend on your browser and operating system.</p>
+            <img src="images/launch_date.png" class="image_inline">
+            <p>Allowed dates are based on availability of wind forecast data.  Future dates are limited to 14 days from the current day.  Only one day in the past is supported.</p>
+        </div>
+        <hr>
+        <div>
+            <h3>Launch Times</h3>
+            <p>This identifies what times of day the launch begins and completes.  Drift will be calculated for both times along with each hour in between.</p>
+            <img src="images/launch_times.png" class="image_inline">
+            <p>A maximum of 12 hours for a single launch are allowed.  Wind forecasts are only available for 12 hours into the past.</p>
+        </div>
+        <hr>
+        <div>
+            <h2>Recovery</h2>
+            <p>This section collects flight details about your rocket.  Certain fields are only required if you are using a dual deployment recovery system.</p>
+        </div>
+        <hr>
+        <div>
+            <h3>Single Deployment</h3>
+            <img src="images/recovery_single_select.png" class="image_inline">
+        </div>
+        <hr>
+        <div>
+            <h4>Apogee</h4>
+            <p>The highest altitude your rocket is expected to reach during this launch.  Value should be feet above ground level.</p>
+            <img src="images/recovery_apogee.png" class="image_inline">
+        </div>
+        <hr>
+        <div>
+            <h4>Main Descent</h4>
+            <p>What speed your rocket is expected to descend.  This is based on the weight and parachute size.  Simulation software such as <a href="https://openrocket.info/">OpenRocket</a> and <a href="https://www.apogeerockets.com/index.php?main_page=product_software_info&cPath=13_206&products_id=3300">Rocksim</a> can help calculate it.  Values should be in feet per second.</p>
+            <img src="images/recovery_main.png" class="image_inline">
+        </div>
+        <hr>
+        <div>
+            <h3>Dual Deployment</h3>
+            <img src="images/recovery_dual_select.png" class="image_inline">
+        </div>
+        <hr>
+        <div>
+            <h4>Apogee</h4>
+            <p>The highest altitude your rocket is expected to reach during this launch.  Value should be feet above ground level.</p>
+            <img src="images/recovery_apogee.png" class="image_inline">
+        </div>
+        <hr>
+        <div>
+            <h4>Main Descent</h4>
+            <p>The speed your rocket is expected to descend after the main parachute is deployed.  This is based on the weight and parachute size.  Simulation software such as <a href="https://openrocket.info/">OpenRocket</a> and <a href="https://www.apogeerockets.com/index.php?main_page=product_software_info&cPath=13_206&products_id=3300">Rocksim</a> can help calculate it.  Values should be in feet per second.</p>
+            <img src="images/recovery_main.png" class="image_inline">
+        </div>
+        <hr>
+        <div>
+            <h4>Main Event</h4>
+            <p>Altitude your altimeter is set to perform main parachute deployment.  Value should be feet above ground level.</p>
+            <img src="images/recovery_main_deploy.png" class="image_inline">
+        </div>
+        <hr>
+        <div>
+            <h4>Drogue Descent</h4>
+            <p>The speed your rocket is expected to descend while only the drogue parachute is deployed.  This is based on the weight and parachute size.  Simulation software such as <a href="https://openrocket.info/">OpenRocket</a> and <a href="https://www.apogeerockets.com/index.php?main_page=product_software_info&cPath=13_206&products_id=3300">Rocksim</a> can help calculate it.  Values should be in feet per second.</p>
+            <img src="images/recovery_drogue.png" class="image_inline">
+        </div>
+        <hr>
+        <div>
+            <h2>Weathercocking</h2>
+            <p>Rockets often turn into the wind after leaving the launch pad.  This behavior is called weathercocking.  The amount of turning changes based on the rocket's stability margin, wind speed, and liftoff velocity.  More information can be found on the <a href="https://www1.grc.nasa.gov/beginners-guide-to-aeronautics/rocket-weather-cocking/">NASA Glenn Research Center website</a>.</p>
+        </div>
+        <hr>
+        <div>
+            <h3>Apply Weathercocking</h3>
+            <p>You can decide if weathercocking is applied to your drift calculations.  It is turned off by default for a perfectly vertical simulation.  If you wish to proceed, begin by checking the "Apply Weathercocking" box.</p>
+            <img src="images/wc_table.png" class="image_inline">
+            <p>A series of input fields will become visible as a result.  You will need to provide upwind distance and apogee values for certain wind speeds.  They can be produced from multiple runs of a rocket simulation package.</p>
+            <p>Run <a href="https://www.apogeerockets.com/index.php?main_page=product_software_info&cPath=13_206&products_id=3300">Rocksim</a> or <a href="https://openrocket.info/">OpenRocket</a> using wind speeds between 0 and 20 mph in 5 mph increments.</p>
+        </div>
+        <hr>
+        <div>
+            <h4>Rocksim Plots</h4>
+            <p>Make sure to enter the appropriate launch angle in your simulations.  <a href="https://www.apogeerockets.com/index.php?main_page=product_software_info&cPath=13_206&products_id=3300">Rocksim</a> uses negative angles for into the wind.</p>
+            <p>Run your simulation.  Next plot <b>"Altitude vs Range"</b> in a graph.</p>
+            <img src="images/wc_rocksim.png" class="image_inline">
+            <p>Enter the max range in feet of the rocket near apogee into the <b>Distance</b> field of the matching wind speed.</p>
+            <img src="images/wc_distance.png" class="image_inline">
+            <p>Enter the max altitude in feet above ground level of the rocket into the <b>Apogee</b> field of the matching wind speed.</p>
+            <img src="images/wc_apogee.png" class="image_inline">
+            <p>Do this for all 5 wind speeds.  It is assumed that 0 mph wind speed result is provided as the rocket's maximum in the Launch section.</p>
+        </div>
+        <hr>
+        <div>
+            <h4>OpenRocket Plots</h4>
+            <p>Make sure to enter the appropriate launch angle in your simulations.  <a href="https://openrocket.info/">OpenRocket</a> uses positive angles for into the wind.</p>
+            <p>Run your simulation.  Next plot <b>"Altitude vs Position North of field"</b> in a graph.</p>
+            <img src="images/wc_openrocket.png" class="image_inline">
+            <p>Enter the max position northof field in feet of the rocket near apogee into the <b>Distance</b> field of the matching wind speed.</p>
+            <img src="images/wc_distance.png" class="image_inline">
+            <p>Enter the max altitude in feet above ground level of the rocket into the <b>Apogee</b> field of the matching wind speed.</p>
+            <img src="images/wc_apogee.png" class="image_inline">
+            <p>Do this for all 5 wind speeds.  It is assumed that 0 mph wind speed result is provided as the rocket's maximum in the Launch section.</p>
+        </div>
+        <hr>
+        <div>
+            <h2>Drift Calculations</h2>
+            <p>Click on the Calculate Drift button when all of your data is ready.</p>
+            <img src="images/btn_calculate.png" class="image_inline">
+            <p>Note any previous drift results are deleted when a new calucation begins.</p>
+        </div>
+        <hr>
+        <div>
+            <h3>Results</h3>
+            <p>The drift calculation results are provided in several formats.  Each type offers unique benefits depending on your needs.</p>
+        </div>
+        <hr>
+        <div>
+            <h4>Static Map</h4>
+            <p>Launch site and landing locations are displayed on a static map image.</p>
+            <img src="images/staticmap.jpg" class="image_inline">
+            <p>A red marker is placed at the launch site.  Each landing location is identified by yellow marker with the associated hour provided as a numeric value.</p>
+        </div>
+        <hr>
+        <div>
+            <h4>Data Table</h4>
+            <p>Additional details of the drift calculations are provided in a table format for easy viewing.</p>
+            <img src="images/data_table.png" class="image_inline">
+            <p><b>Time</b> identifes the hour from your launch window associated with the other data displayed in this row.  This will match one of the map marker icons.</p>
+            <p><b>Model</b> names the forecast model used to generate the wind data.  Note only Open-Meteo is currently available due to NOAA recently removing access to their <a href="https://rucsoundings.noaa.gov/">RAP forecasts</a> for continental USA.</p>
+            <p><b>Average Surface Wind</b> is based on data between 0 and approximately 500 feet Above Ground Level (AGL) for flights with an apogee below 1000 feet.  It uses values up to 1000 ft for flights exceeding 1000 ft AGL.</p>
+            <p><b>Speed</b> is displayed in miles per hour.  Background color changes from green at 0 MPH to red at the rocketry saftey code limit of 20 MPH.</p>
+            <p><b>Direction</b> is based from 0° as North.  Note this is where the wind originates, not the direction it is blowing toward.</p>
+            <p><b>Apogee</b> is the rocket's estimated maximum height reached based on weathercocking.</p>
+            <p><b>Weathercock</b> indicates how far upwind the rocket travels in feet due to turning into the wind.</p>
+            <p><b>Landing</b> estimates the distance in feet away from your launch site the rocket is calculated to land.</p>
+        </div>
+        <hr>
+        <div>
+            <h4>KML Plots</h4>
+            <p>More detailed mapping is provided through KML files which can be viewed in <a href="https://www.google.com/earth/about/">Google Earth</a>.  This software is available for free as a <a href="https://earth.google.com/web/">Web App</a> and a downloadable <a href="https://www.google.com/earth/about/versions/#earth-pro">Desktop</a> version.</p>
+            <p>Two versions of the drift calculations are available.  Simply click the Save Landing Plots or Save Flight Plots button depending on which best matches your needs.  Descriptions of both are provided below.</p>
+            <img src="images/btn_save_kml_plots.png" class="image_inline">
+            <p>This will trigger a File Save dialog.  Provide a name and location of your choosing.  Note that leaving the default values will overwrite any previously saved files.</p>
+        </div>
+        <hr>
+        <div>
+            <h5>Landing Plots</h5>
+            <p>The landing plot files contain the same basic information as displayed in the static map image.  The main benefit is an ability to rescale and move your viewpoint around to better visualize your landing locations in relation to ground hazards.  A series of map markers with labels identifying the simulated time will be displayed.</p>
+            <a href="images/kml_landing_plot.jpg"><img src="images/kml_landing_plot_small.jpg" class="image_inline"></a>
+        </div>
+        <hr>
+        <div>
+            <h5>Flight Plots</h5>
+            <a href="images/kml_flight_plots_full.jpg" class="image_float_right"><img src="images/kml_flight_plots_full_small.jpg" class="image_float_right"></a>
+            <p>The flight plot files contain additional information used to draw the entire path traversed by the rocket.  In addition to viewing the height above ground throughout a launch, changes in dual deployment descent rates are visually represented.</p>
+            <p>A line along the surface identifies where to expect the rocket in relation to ground features at any time during descent.  Hopefully this assists with planning to avoid known ground hazards.</p>
+            <a href="images/kml_flight_plots.jpg" class="image_inline"><img src="images/kml_flight_plots_small.jpg" class="image_inline"></a>
+        </div>
+    </body>
+</html>

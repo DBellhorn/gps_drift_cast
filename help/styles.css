@@ -1,0 +1,35 @@
+body {
+    /* Center the form on the page */
+    text-align: center;
+}
+
+h1 {
+    /* Center the form on the page */
+    text-align: center;
+}
+
+div {
+    margin: auto;
+    max-width: 800px;
+}
+
+img.image_float_right {
+    float: right;
+    margin-left: 5px;
+}
+
+img.image_inline {
+    display: block;
+    margin: auto;
+}
+
+p {
+    display:block;
+    text-align: left;
+}
+
+hr {
+    max-width: 800px;
+    border: 3px solid;
+    border-radius: 3px;
+}
