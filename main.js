@@ -1166,7 +1166,7 @@ window.onload = () => {
     
     const headerOneElement = document.querySelector('h1');
     if (null != headerOneElement) {
-        headerOneElement.textContent = 'GPS DriftCast 0.5c';
+        headerOneElement.textContent = 'GPS DriftCast 0.6';
     }
 }
 
