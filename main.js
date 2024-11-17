@@ -3,6 +3,7 @@ import { saveLandingScatter, saveFlightScatter } from "./kml.js";
 import { LaunchTimeData, LaunchPathPoint, LaunchSimulationData, DescentData } from "./launch.js";
 import { WindAtAltitude, WindForecastData, WeathercockWindData } from "./wind.js";
 import { getWindPredictionData, getWindBandPercentage, getAverageWindSpeed, getAverageWindDirection, driftWithWind } from "./wind.js";
+import { getHourColor } from "./map_colors.js";
 
 const googleMapApiKey = 'YOUR_API_KEY';
 
@@ -536,16 +537,22 @@ function updateStaticLandingScatterImage(launchList) {
 
         // Standard markers only allow single digits, so use custom icons for 10, 11, and 12.
         if (3 == fullLaunchTime.length) {
-            staticMapUrl += `&markers=color:yellow%7Clabel:${fullLaunchTime.slice(0,1)}`;
+            let hourNumber = parseInt(fullLaunchTime.slice(0, 1));
+            if (null == hourNumber || isNaN(hourNumber)) {
+                hourNumber = 0;
+            }
+
+            const markerColor = getHourColor(hourNumber);
+            staticMapUrl += `&markers=color:${markerColor.name}%7Clabel:${fullLaunchTime.slice(0,1)}`;
         } else {
             let customIcon = '';
             const hourNumber = parseInt(fullLaunchTime.slice(0, 2));
             if (10 == hourNumber) {
-                customIcon = 'https://davidbellhorn.com/DriftCast/images/ten.png';
+                customIcon = 'https://gpsdriftcast.com/images/ten.png';
             } else if (11 == hourNumber) {
-                customIcon = 'https://davidbellhorn.com/DriftCast/images/eleven.png';
+                customIcon = 'https://gpsdriftcast.com/images/eleven.png';
             } else if (12 == hourNumber) {
-                customIcon = 'https://davidbellhorn.com/DriftCast/images/twelve.png';
+                customIcon = 'https://gpsdriftcast.com/images/twelve.png';
             }
 
             if (customIcon.length > 0) {
@@ -1166,7 +1173,7 @@ window.onload = () => {
     
     const headerOneElement = document.querySelector('h1');
     if (null != headerOneElement) {
-        headerOneElement.textContent = 'GPS DriftCast 0.6';
+        headerOneElement.textContent = 'GPS DriftCast 0.6a';
     }
 }
 
