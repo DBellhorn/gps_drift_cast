@@ -1,5 +1,6 @@
 import { GeoLocation, feetToMeters, moveAlongBearing } from "./geo.js";
 import { LaunchSimulationData } from "./launch.js";
+import { getHourColor } from "./map_colors.js";
 
 /**
  * Formats the launch and landing plot data according to the KML standard for display
@@ -46,8 +47,15 @@ async function createLandingPlotBlob(launchLocation, waiverLocation, waiverRadiu
             continue;
         }
 
+        const markerColor = getHourColor(launchSimulationList[index].time);
+
         stringArray.push(`    <Placemark>\n`);
         stringArray.push(`      <name>${launchSimulationList[index].getLaunchTime()}</name>\n`);
+        stringArray.push(`      <Style>\n`);
+        stringArray.push(`        <IconStyle>\n`);
+        stringArray.push(`          <color>${markerColor.earthHexadecimal}</color>\n`);
+        stringArray.push(`        </IconStyle>\n`);
+        stringArray.push(`      </Style>\n`);
         stringArray.push(`      <Point>\n`);
         stringArray.push(`        <coordinates>${landingLocation.longitude},${landingLocation.latitude},0</coordinates>\n`);
         stringArray.push(`      </Point>\n`);
@@ -139,10 +147,6 @@ function createFlightPathBlob(launchLocation, waiverLocation, waiverRadius, laun
         return;
     }
 
-    // List of colors for flight path lines
-    const flightPathColors = ["ff0000ff", "ffffffff", "ffffff00", "ff00ff00", "ff00ffff", "ffff00ff", "ff808080", "ffffa500", "ff000000", "ff008000", "ff0000ff", "ff800080"];
-    let flightPathColorIndex = 0;
-
     // Write KML header
     let stringArray = [`<?xml version="1.0" encoding="UTF-8"?>\n`];
     stringArray.push(`<kml xmlns="http://www.opengis.net/kml/2.2">\n`);
@@ -175,9 +179,10 @@ function createFlightPathBlob(launchLocation, waiverLocation, waiverRadius, laun
         stringArray.push(`      <name>Flight Path, ${launchSimulationList[index].getLaunchTime()}</name>\n`);
         
         // flight path track style
+        const markerColor = getHourColor(launchSimulationList[index].time);
         stringArray.push(`      <Style>\n`);
         stringArray.push(`        <LineStyle>\n`);
-        stringArray.push(`          <color>${flightPathColors[flightPathColorIndex]}</color>\n`);
+        stringArray.push(`          <color>${markerColor.earthHexadecimal}</color>\n`);
         stringArray.push(`          <width>4</width>\n`);
         stringArray.push(`        </LineStyle>\n`);
         stringArray.push(`      </Style>\n`);
@@ -204,7 +209,7 @@ function createFlightPathBlob(launchLocation, waiverLocation, waiverRadius, laun
         // Ground track style (same color as main track, line width 1)
         stringArray.push(`      <Style>\n`);
         stringArray.push(`        <LineStyle>\n`);
-        stringArray.push(`          <color>${flightPathColors[flightPathColorIndex]}</color>\n`);
+        stringArray.push(`          <color>${markerColor.earthHexadecimal}</color>\n`);
         stringArray.push(`          <width>1</width>\n`);
         stringArray.push(`        </LineStyle>\n`);
         stringArray.push(`      </Style>\n`);
@@ -239,12 +244,6 @@ function createFlightPathBlob(launchLocation, waiverLocation, waiverRadius, laun
             stringArray.push(`        <coordinates>${lastLocation.longitude},${lastLocation.latitude},0</coordinates>\n`);
             stringArray.push(`      </Point>\n`);
             stringArray.push(`    </Placemark>\n`);
-        }
-
-        // Move to the next flight path color
-        ++flightPathColorIndex;
-        if (flightPathColorIndex >= flightPathColors.length) {
-            flightPathColorIndex = 0;
         }
     }
 
