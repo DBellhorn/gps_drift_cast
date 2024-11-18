@@ -1289,6 +1289,23 @@ function linearInterpolate(sourceValue, sourceLower, sourceUpper, targetLower, t
  * @returns {number} Expected lower apogee due to weathercocking or -1 if an error occurs.
  */
 function weathercockAdjustment(apogeeLocation, windDirection, windSpeed, weathercockData) {
+    if (0 == weathercockData.length) {
+        console.debug('Unable to adjust for weathercocking without valid data.');
+        return -1;
+    }
+
+    // Check if the provided wind speed is outside the provided wind data.
+    if (windSpeed <= weathercockData[0].windSpeed) {
+        // This will likely never be true, but always nice to double check when possible.
+        if (weathercockData[0].upwindDistance > 0.0) {
+            moveAlongBearing(apogeeLocation, feetToMeters(weathercockData[0].upwindDistance), windDirection);
+        }
+        return weathercockData[0].apogee;
+    } else if (windSpeed > weathercockData[weathercockData.length - 1].windSpeed) {
+        moveAlongBearing(apogeeLocation, feetToMeters(weathercockData[weathercockData.length - 1].upwindDistance), windDirection);
+        return weathercockData[0].apogee;
+    }
+
     let apogeeAltitude = -1;
 
     // Expecting weathercock result data for wind speeds from 0 to 20MPH in 5MPH segments.
