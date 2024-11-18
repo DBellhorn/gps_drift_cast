@@ -268,7 +268,6 @@ async function getWindPredictionData(launchLocation, hourOffset) {
         })
         .catch(error => {
             console.debug(`An error was caught while fetching a wind forecast. ${error.message}`);
-            alert('The request for a wind forecast failed. Unable to continue with this drift calculation.');
         });
 
     return windForecast;

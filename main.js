@@ -46,7 +46,9 @@ const btnSaveFlightPlots = 'btn_save_flight_plot';
 
 // Drift result display IDs
 const imgStaticMapId = 'img_static_map';
+const driftResultDivId = 'drift_result_div';
 const driftResultTableId = 'drift_result_table';
+const statusDisplayId = 'status_display';
 
 // Hold an instance of a db object for us to store the IndexedDB data in
 let dbLaunchSites = null;
@@ -579,7 +581,9 @@ function updateStaticLandingScatterImage(launchList) {
  */
 function updateDriftResultTable(launchList) {
     const driftResultTable = document.getElementById(driftResultTableId);
-    driftResultTable.hidden = false;
+    if (null == driftResultTable) {
+        return;
+    }
 
     // Remove any data on display from previous drift calculations.
     const previousDriftData = driftResultTable.querySelector('tbody');
@@ -692,6 +696,9 @@ function updateDriftResultTable(launchList) {
 
     // Place our new body full of drift result data into the table.
     driftResultTable.appendChild(driftResultBody);
+
+    // Switch the table to visible now that it has been filled out.
+    document.getElementById(driftResultDivId).hidden = false;
 }
 
 /**
@@ -1090,23 +1097,56 @@ window.onload = () => {
 
     document.getElementById(btnCalculateDrift).addEventListener('click', async () => {
         // Disable the user's ability to save until our data is refreshed.
-        document.getElementById(btnSaveLandingPlots).disabled = true;
-        document.getElementById(btnSaveFlightPlots).disabled = true;
+        const saveLandingPlotsButton = document.getElementById(btnSaveLandingPlots);
+        if (null != saveLandingPlotsButton) {
+            saveLandingPlotsButton.disabled = true;
+            saveLandingPlotsButton.hidden = true;
+        }
+        const saveFlightPlotsButton = document.getElementById(btnSaveFlightPlots);
+        if (null != saveFlightPlotsButton) {
+            saveFlightPlotsButton.disabled = true;
+            saveFlightPlotsButton.hidden = true;
+        }
 
         // Hide any previous drift results.
         document.getElementById(imgStaticMapId).hidden = true;
-        document.getElementById(driftResultTableId).hidden = true;
+        document.getElementById(driftResultDivId).hidden = true;
+
+        // Let the user know something is happening in the background.
+        const statusDisplayElement = document.getElementById(statusDisplayId);
+        if (null != statusDisplayElement) {
+            statusDisplayElement.textContent = 'Calculating drift...';
+            statusDisplayElement.hidden = false;
+            statusDisplayElement.scrollIntoView({ behavior: "instant", block: "end" });
+        }
 
         // Calculate new drift and landing results
         launchSimulationList = await calculateLandingPlots();
         if (launchSimulationList.length > 0) {
+            // No need to continue showing our text feedback now that results are ready.
+            if (null != statusDisplayElement) {
+                statusDisplayElement.hidden = true;
+            }
+
             // Allow the user to save now that valid drift and landing data is available.
-            document.getElementById(btnSaveLandingPlots).disabled = false;
-            document.getElementById(btnSaveFlightPlots).disabled = false;
+            if (null != saveLandingPlotsButton) {
+                saveLandingPlotsButton.disabled = false;
+                saveLandingPlotsButton.hidden = false;
+            }
+            if (null != saveFlightPlotsButton) {
+                saveFlightPlotsButton.disabled = false;
+                saveFlightPlotsButton.hidden = false;
+            }
             updateStaticLandingScatterImage(launchSimulationList);
             updateDriftResultTable(launchSimulationList);
+
+            // Try to bring everything into view now the elements are visible.
+            document.getElementById(driftResultTableId).scrollIntoView({ behavior: "instant", block: "start" });
         } else {
-            console.debug(`Skipping writing a landing plot KML file since no simulation data was returned.`);
+            // Let the user know something bad happened.
+            if (null != statusDisplayElement) {
+                statusDisplayElement.textContent = 'An error occurred.'
+            }
         }
     });
 
