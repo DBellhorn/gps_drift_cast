@@ -138,23 +138,17 @@
                 <input type="number" class="weathercock_table" name="weathercock_distance_twenty" id="weathercock_distance_twenty" value="0" />
                 <input type="number" class="weathercock_table" name="weathercock_apogee_twenty" id="weathercock_apogee_twenty" value="0" />
             </p>
+            <br>
         </div>
-        <br>
         <div>
             <button type="button" id="btn_calculate_drift">Calculate Drift</button>
         </div>
-        <br>
         <div>
-            <button type="button" id="btn_save_landing_plot" disabled="true">Save Landing Plots</button>
-            <button type="button" id="btn_save_flight_plot" disabled="true">Save Flight Plots</button>
+            <h2 id="status_display" hidden="true">Calculating drift...</h2>
         </div>
-        <br>
-        <div>
-            <img id="img_static_map" hidden>
-        </div>
-        <br>
-        <div>
-            <table id="drift_result_table" hidden>
+        <div id="drift_result_div" hidden>
+            <br>
+            <table id="drift_result_table">
                 <thead>
                     <tr>
                         <th rowspan="2">Time</th>
@@ -170,6 +164,15 @@
                     </tr>
                 </thead>
             </table>
+        </div>
+        <br>
+        <div>
+            <img id="img_static_map" hidden>
+        </div>
+        <br>
+        <div>
+            <button type="button" id="btn_save_landing_plot" disabled="true" hidden="true">Save Landing Plots</button>
+            <button type="button" id="btn_save_flight_plot" disabled="true" hidden="true">Save Flight Plots</button>
         </div>
         <script type="module" src="main.js"></script>
     </body>
