@@ -312,7 +312,7 @@ function getWindBandPercentage(rocketAltitude, windData, floorIndex) {
  */
 function getAverageWindSpeed(bandPercentage, windData, floorIndex) {
     // Verify the percentage is an expected value just in case.
-    if (bandPercentage <= 0 || bandPercentage > 1.0) {
+    if (bandPercentage < 0.0 || bandPercentage > 1.0) {
         console.debug(`Wind band percentage ${bandPercentage} is outside the expected value range.`);
         return -1;
     }
@@ -336,7 +336,7 @@ function getAverageWindSpeed(bandPercentage, windData, floorIndex) {
  */
 function getAverageWindDirection(bandPercentage, windData, floorIndex) {
     // Verify the percentage is an expected value just in case.
-    if (bandPercentage <= 0 || bandPercentage > 1.0) {
+    if (bandPercentage < 0.0 || bandPercentage > 1.0) {
         console.debug(`Wind band percentage ${bandPercentage} is outside the expected value range.`);
         return -1;
     }
