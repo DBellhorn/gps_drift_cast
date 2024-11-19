@@ -107,8 +107,11 @@ input[type='radio'] {
 .weathercock_table {
     border: 2px solid #000;
     margin: 0;
-    min-width: 139px;
     text-align: center;
+    display: inline-block;
+    min-height: 20px;
+    min-width: 130px;
+    max-width: 139px;
 }
 
 /** Adding styling for tables. Pulled from MDN tutorial's minimal-table. */
