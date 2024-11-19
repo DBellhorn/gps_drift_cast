@@ -706,6 +706,9 @@ function updateDriftResultTable(launchList) {
  * those that are loaded lazily.
  */
 window.onload = () => {
+    // Print a version into the log to help keep track between iterations.
+    console.log('GPS DriftCast 1.0');
+
     const launchDateElement = document.getElementById(launchDateId);
     const startTimeElement = document.getElementById(startTimeId);
     const endTimeElement = document.getElementById(endTimeId);
@@ -1209,12 +1212,6 @@ window.onload = () => {
             console.debug(`Skipping writing a flight path KML file since no simulation data was returned.`);
         }
     });
-
-    
-    const headerOneElement = document.querySelector('h1');
-    if (null != headerOneElement) {
-        headerOneElement.textContent = 'GPS DriftCast 0.6a';
-    }
 }
 
 /**
