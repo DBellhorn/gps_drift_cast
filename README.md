@@ -8,6 +8,7 @@ The website fetches wind speed and direction forecasts for each hour.  The curre
 ![Static map showing predicted landing locations](/images/staticmap.jpg)
 
 KML files containing landing locations and flight paths are also availble to download.  These can be opened in 3D mapping software such as [Google Earth](https://earth.google.com/)
+![Flight paths in Google Earth](/images/flight-path.jpg)
 
 Wind forecasts are obtained through the [WindsAloft.us](https://windsaloft.us/) API.  The posted URL includes a referrer code allowing them to track usage statistics.  Please request a new code prior to running this code.  Just replace 'YOUR_REFERRER_CODE' at the top of get_wind_forecast.php with your unique code.
 
