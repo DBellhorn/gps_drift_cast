@@ -1,5 +1,5 @@
 import { GeoLocation, feetToMeters, metersToFeet, moveAlongBearing, distanceBetweenLocations } from "./geo.js";
-import { saveLandingScatter, saveFlightScatter } from "./kml.js";
+import { saveLandingScatter, saveFlightScatter, saveGroundPaths } from "./kml.js";
 import { LaunchTimeData, LaunchPathPoint, LaunchSimulationData, DescentData } from "./launch.js";
 import { WindAtAltitude, WindForecastData, WeathercockWindData } from "./wind.js";
 import { getWindPredictionData, getWindBandPercentage, getAverageWindSpeed, getAverageWindDirection, driftWithWind } from "./wind.js";
@@ -43,6 +43,7 @@ const weathercockDataId = 'weathercock_data';
 const btnCalculateDrift = 'btn_calculate_drift';
 const btnSaveLandingPlots = 'btn_save_landing_plot';
 const btnSaveFlightPlots = 'btn_save_flight_plot';
+const btnSaveGroundPaths = 'btn_save_ground_paths';
 
 // Drift result display IDs
 const imgStaticMapId = 'img_static_map';
@@ -1110,6 +1111,11 @@ window.onload = () => {
             saveFlightPlotsButton.disabled = true;
             saveFlightPlotsButton.hidden = true;
         }
+        const saveGroundPathsButton = document.getElementById(btnSaveGroundPaths);
+        if (null != saveGroundPathsButton) {
+            saveGroundPathsButton.disabled = true;
+            saveGroundPathsButton.hidden = true;
+        }
 
         // Hide any previous drift results.
         document.getElementById(imgStaticMapId).hidden = true;
@@ -1139,6 +1145,10 @@ window.onload = () => {
             if (null != saveFlightPlotsButton) {
                 saveFlightPlotsButton.disabled = false;
                 saveFlightPlotsButton.hidden = false;
+            }
+            if (null != saveGroundPathsButton) {
+                saveGroundPathsButton.disabled = false;
+                saveGroundPathsButton.hidden = false;
             }
             updateStaticLandingScatterImage(launchSimulationList);
             updateDriftResultTable(launchSimulationList);
@@ -1210,6 +1220,36 @@ window.onload = () => {
             await saveFlightScatter(launchSiteLocation, waiverLocation, waiverRadius, launchSimulationList);
         } else {
             console.debug(`Skipping writing a flight path KML file since no simulation data was returned.`);
+        }
+    });
+
+    // The user wants to save a KML file containing flight paths projected as ground tracks.
+    document.getElementById(btnSaveGroundPaths).addEventListener('click', async (event) => {
+        if (null != launchSimulationList && launchSimulationList.length > 0) {
+            const launchSiteLocation = getLaunchSiteLocation();
+            let waiverLatitude = parseFloat(document.getElementById(waiverLatitudeId).value);
+            if (isNaN(waiverLatitude)) {
+                waiverLatitude = launchSiteLocation.latitude;
+            } else if ((waiverLatitude > 90.0) || (waiverLatitude < -90.0)) {
+                waiverLatitude = launchSiteLocation.latitude;
+            }
+        
+            let waiverLongitude = parseFloat(document.getElementById(waiverLongitudeId).value);
+            if (isNaN(waiverLongitude)) {
+                waiverLongitude = launchSiteLocation.longitude;
+            } else if ((waiverLongitude > 180.0) || (waiverLongitude < -180.0)) {
+                waiverLongitude = launchSiteLocation.longitude;
+            }
+            const waiverLocation = new GeoLocation(waiverLatitude, waiverLongitude);
+
+            let waiverRadius = parseFloat(document.getElementById(waiverRadiusId).value);
+            if (isNaN(waiverRadius)) {
+                waiverRadius = 0;
+            }
+
+            await saveGroundPaths(launchSiteLocation, waiverLocation, waiverRadius, launchSimulationList);
+        } else {
+            console.debug(`Skipping writing a ground paths KML file since no simulation data was returned.`);
         }
     });
 }

@@ -46,7 +46,7 @@ class MapColorInfo {
     get earthHexadecimal() { return this.#earthHexadecimal; }
 
     /**
-     * Hexadecimal number used by web browsers. Ex: #f21821
+     * Hexadecimal number used by web browsers. Ex: f21821
      * @type {string}
      */
     get webHexadecimal() { return this.#webHexadecimal; }
@@ -54,19 +54,19 @@ class MapColorInfo {
 
 /** @type {Array.<MapColorInfo>} Stores colors for each hour (1 - 12) with RED as a default. */ 
 const mapColors = [
-    new MapColorInfo('red', 'ff0000ff', '#ff0000'),
-    new MapColorInfo('blue', 'ffff0000', '#0000ff'),
-    new MapColorInfo('green', 'ff008000', '#00ff00'),
-    new MapColorInfo('purple', 'ff800080', '#800080'),
-    new MapColorInfo('black', 'ff000000', '#000000'),
-    new MapColorInfo('brown', 'ff13458b', '#8b4513'),
-    new MapColorInfo('gray', 'ff808080', '#808080'),
-    new MapColorInfo('white', 'ffffffff', '#ffffff'),
-    new MapColorInfo('orange', 'fffa931a', '#1a93fa'),
-    new MapColorInfo('yellow', 'ff00ffff', '#ffff00'),
-    new MapColorInfo('navy', 'ff800000', '#000080'),
-    new MapColorInfo('lime', 'ff00ff00', '#00ff00'),
-    new MapColorInfo('aqua', 'ffffff00', '#00ffff')
+    new MapColorInfo('red', 'ff0000ff', 'ff0000'),
+    new MapColorInfo('pink', 'ffff00ff', 'ff00ff'),
+    new MapColorInfo('sky', 'fffa931a', '1a93fa'),
+    new MapColorInfo('yellow', 'ff00ffff', 'ffff00'),
+    new MapColorInfo('blue', 'ffff0000', '0000ff'),
+    new MapColorInfo('purple', 'ff800080', '800080'),
+    new MapColorInfo('brown', 'ff13458b', '8b4513'),
+    new MapColorInfo('black', 'ff000000', '000000'),
+    new MapColorInfo('green', 'ff008000', '008000'),
+    new MapColorInfo('orange', 'ff1a93fa', 'fa931a'),
+    new MapColorInfo('navy', 'ff800000', '000080'),
+    new MapColorInfo('lime', 'ff00ff00', '00ff00'),
+    new MapColorInfo('aqua', 'ffffff00', '00ffff')
 ];
 
 /**
