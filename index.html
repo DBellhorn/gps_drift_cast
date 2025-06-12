@@ -21,126 +21,113 @@
             <a href="about/index.html">About</a>
         </div>
         <h1>GPS DriftCast</h1>
-        <fieldset class="fieldset_location">
-            <legend>Location</legend>
-            <p>
-                <select name="select_launch_site" id="select_launch_site" disabled>
-                    <option value="no_saves">No Saved Launch Sites Found</option>
-                </select>
-            </p>
-            <p>
-                <label for="launch_site_name">Name</label>
-                <input type="text" name="launch_site_name" id="launch_site_name" />
-            </p>
-            <p>
-                <label for="launch_site_latitude">*Latitude</label>
-                <input type="text" name="launch_site_latitude" id="launch_site_latitude" value="" placeholder="30.614631"/>
-            </p>
-            <p>
-                <label for="launch_site_longitude">*Longitude</label>
-                <input type="text" name="launch_site_longitude" id="launch_site_longitude" value="" placeholder="-97.495914"/>
-            </p>
-            <fieldset>
-                <legend>Waiver</legend>
-                <p>
-                    <label for="waiver_latitude">Latitude</label>
-                    <input type="text" class="waiver_input" name="waiver_latitude" id="waiver_latitude" value="" placeholder="30.614167"/>
-                </p>
-                <p>
-                    <label for="waiver_longitude">Longitude</label>
-                    <input type="text" class="waiver_input" name="waiver_longitude" id="waiver_longitude" value="" placeholder="-97.497501"/>
-                </p>
-                <p>
-                    <label for="waiver_radius">Radius</label>
-                    <input type="text" inputmode="decimal" class="waiver_input" name="waiver_radius" id="waiver_radius" value="" placeholder="(nautical miles)"/>
-                </p>
-                <input type="hidden" name="waiver_altitude" id="waiver_altitude" value="0"/>
-                <input type="hidden" name="launch_site_elevation" id="launch_site_elevation" value="-1" />
+        <div id="data-entry-section">
+            <fieldset id="fieldset_location">
+                <legend>Location</legend>
+                <div class="data-input-grid-container">
+                    <select name="select_launch_site" id="select_launch_site" disabled>
+                        <option value="no_saves">No Saved Launch Sites Found</option>
+                    </select>
+
+                    <label for="launch_site_name" class="location-label">Name</label>
+                    <input type="text" name="launch_site_name" id="launch_site_name" />
+
+                    <label for="launch_site_latitude" class="location-label">*Latitude</label>
+                    <input type="text" name="launch_site_latitude" id="launch_site_latitude" value="" placeholder="Ex: 30.614631"/>
+
+                    <label for="launch_site_longitude" class="location-label">*Longitude</label>
+                    <input type="text" name="launch_site_longitude" id="launch_site_longitude" value="" placeholder="Ex: -97.495914"/>
+                </div>
+                <fieldset>
+                    <legend>Waiver</legend>
+                    <div class="data-input-grid-container">
+                        <label for="waiver_latitude">Latitude</label>
+                        <input type="text" class="waiver_input" name="waiver_latitude" id="waiver_latitude" value="" placeholder="Ex: 30.614167"/>
+
+                        <label for="waiver_longitude">Longitude</label>
+                        <input type="text" class="waiver_input" name="waiver_longitude" id="waiver_longitude" value="" placeholder="Ex: -97.497501"/>
+
+                        <label for="waiver_radius">Radius</label>
+                        <input type="text" inputmode="decimal" class="waiver_input" name="waiver_radius" id="waiver_radius" value="" placeholder="(nautical miles)"/>
+                    </div>
+                    <input type="hidden" name="waiver_altitude" id="waiver_altitude" value="0"/>
+                    <input type="hidden" name="launch_site_elevation" id="launch_site_elevation" value="-1" />
+                </fieldset>
+                <div id="location-button-container">
+                    <button type="button" id="btn_site_cancel" hidden>Cancel</button>
+                    <button type="button" id="btn_site_save">Save</button>
+                    <button type="button" id="btn_site_edit" hidden>Edit</button>
+                    <button type="button" id="btn_site_delete" hidden>Delete</button>
+                    <button type="button" id="btn_site_new" hidden>New</button>
+                </div>
             </fieldset>
-            <p>
-                <button type="button" id="btn_site_cancel" hidden>Cancel</button>
-                <button type="button" id="btn_site_save">Save</button>
-                <button type="button" id="btn_site_edit" hidden>Edit</button>
-                <button type="button" id="btn_site_delete" hidden>Delete</button>
-                <button type="button" id="btn_site_new" hidden>New</button>
-            </p>
-        </fieldset>
-        <fieldset class="fieldset_launch">
-            <legend>Launch</legend>
-            <p>
-                <label for="launch_date">*Date</label>
-                <input type="date" name="launch_date" id="launch_date" />
-            </p>
-            <p>
-                <label for="start_time">*Start Time</label>
-                <input type="time" name="start_time" id="start_time" />
-            </p>
-            <p>
-                <label for="end_time">*End Time</label>
-                <input type="time" name="end_time" id="end_time" />
-            </p>
-            <p>
+            <fieldset id="fieldset_launch">
+                <legend>Launch</legend>
+                <div class="data-input-grid-container">
+                    <label for="launch_date">*Date</label>
+                    <input type="date" name="launch_date" id="launch_date" />
+
+                    <label for="start_time">*Start Time</label>
+                    <input type="time" name="start_time" id="start_time" />
+
+                    <label for="end_time">*End Time</label>
+                    <input type="time" name="end_time" id="end_time" />
+                </div>
                 <fieldset>
                     <legend>Recovery</legend>
-                    <p>
-                        <div>
-                            <label for="single_deploy" class="radio_label">Single Deploy</label>
-                            <input type="radio" id="single_deploy" name="deploy_mode" value="single_deploy" checked />
-                            <label for="dual_deploy" class="radio_label">Dual Deploy</label>
-                            <input type="radio" id="dual_deploy" name="deploy_mode" value="dual_deploy" />
+                    <div class="data-input-grid-container">
+                        <div class="deployment-type-container">
+                            <div class="deployment-radio-container">
+                                <label for="single_deploy" class="radio_label">Single Deploy</label>
+                                <input type="radio" id="single_deploy" name="deploy_mode" value="single_deploy" checked />
+                            </div>
+                            <div class="deployment-radio-container">
+                                <label for="dual_deploy" class="radio_label">Dual Deploy</label>
+                                <input type="radio" id="dual_deploy" name="deploy_mode" value="dual_deploy" />
+                            </div>
                         </div>
-                    </p>
-                    <p>
+
                         <label for="launch_apogee" class="recovery_label">*Apogee</label>
                         <input type="text" inputmode="decimal" class="recovery_input" name="launch_apogee" id="launch_apogee" placeholder="(ft AGL)" />
-                    </p>
-                    <p>
+
                         <label for="decent_rate_main" class="recovery_label">*Main Descent (ft/s)</label>
                         <input type="text" inputmode="decimal" class="recovery_input" name="decent_rate_main" id="decent_rate_main" value="20" />
-                    </p>
-                    <p>
+
                         <label for="main_event_altitude" class="recovery_label">Main Event (ft AGL)</label>
                         <input type="text" inputmode="decimal" class="recovery_input" name="main_event_altitude" id="main_event_altitude" placeholder="N/A" disabled/>
-                    </p>
-                    <p>
+
                         <label for="decent_rate_drogue" class="recovery_label">Drogue Decent (ft/s)</label>
                         <input type="text" inputmode="decimal" class="recovery_input" name="decent_rate_drogue" id="decent_rate_drogue" placeholder="N/A" disabled/>
-                    </p>
+                    </div>
                 </fieldset>
-            </p>
-        </fieldset>
-        <br>
-        <p>
+            </fieldset>
+        </div>
+        <div id="weathercock-select">
             <input type="checkbox" name="apply_weathercocking" id="apply_weathercocking" />
             <label class="checkbox_label" for="apply_weathercocking">Apply Weathercocking</label>
-        </p>
-        <div class="weathercock_data" id="weathercock_data" hidden>
-            <p>
-                <span class="weathercock_table_header">Wind Speed (mph)</span>
+        </div>
+        <div id="weathercock_data" hidden>
+            <div id="weathercock_grid">
+                <span class="weathercock_table_header">Wind (mph)</span>
                 <span class="weathercock_table_header">Distance (ft)</span>
-                <span class="weathercock_table_header">Apogee (ft AGL)</span>
-            </p>
-            <p>
+                <span class="weathercock_table_header">Apogee (ft)</span>
+
                 <span class="weathercock_table_label">5</span>
-                <input type="text" inputmode="decimal" class="weathercock_table" name="weathercock_distance_five" id="weathercock_distance_five" value="0" />
-                <input type="text" inputmode="decimal" class="weathercock_table" name="weathercock_apogee_five" id="weathercock_apogee_five" value="0" />
-            </p>
-            <p>
+                <input type="text" inputmode="decimal" class="weathercock_input" name="weathercock_distance_five" id="weathercock_distance_five" value="0" />
+                <input type="text" inputmode="decimal" class="weathercock_input" name="weathercock_apogee_five" id="weathercock_apogee_five" value="0" />
+
                 <span class="weathercock_table_label">10</span>
-                <input type="text" inputmode="decimal" class="weathercock_table" name="weathercock_distance_ten" id="weathercock_distance_ten" value="0" />
-                <input type="text" inputmode="decimal" class="weathercock_table" name="weathercock_apogee_ten" id="weathercock_apogee_ten" value="0" />
-            </p>
-            <p>
+                <input type="text" inputmode="decimal" class="weathercock_input" name="weathercock_distance_ten" id="weathercock_distance_ten" value="0" />
+                <input type="text" inputmode="decimal" class="weathercock_input" name="weathercock_apogee_ten" id="weathercock_apogee_ten" value="0" />
+
                 <span class="weathercock_table_label">15</span>
-                <input type="text" inputmode="decimal" class="weathercock_table" name="weathercock_distance_fifteen" id="weathercock_distance_fifteen" value="0" />
-                <input type="text" inputmode="decimal" class="weathercock_table" name="weathercock_apogee_fifteen" id="weathercock_apogee_fifteen" value="0" />
-            </p>
-            <p>
+                <input type="text" inputmode="decimal" class="weathercock_input" name="weathercock_distance_fifteen" id="weathercock_distance_fifteen" value="0" />
+                <input type="text" inputmode="decimal" class="weathercock_input" name="weathercock_apogee_fifteen" id="weathercock_apogee_fifteen" value="0" />
+
                 <span class="weathercock_table_label">20</span>
-                <input type="text" inputmode="decimal" class="weathercock_table" name="weathercock_distance_twenty" id="weathercock_distance_twenty" value="0" />
-                <input type="text" inputmode="decimal" class="weathercock_table" name="weathercock_apogee_twenty" id="weathercock_apogee_twenty" value="0" />
-            </p>
-            <br>
+                <input type="text" inputmode="decimal" class="weathercock_input" name="weathercock_distance_twenty" id="weathercock_distance_twenty" value="0" />
+                <input type="text" inputmode="decimal" class="weathercock_input" name="weathercock_apogee_twenty" id="weathercock_apogee_twenty" value="0" />
+            </div>
         </div>
         <div>
             <button type="button" id="btn_calculate_drift">Calculate Drift</button>
@@ -149,7 +136,6 @@
             <h2 id="status_display" hidden="true">Calculating drift...</h2>
         </div>
         <div id="drift_result_div" hidden>
-            <br>
             <table id="drift_result_table">
                 <thead>
                     <tr>
@@ -167,11 +153,9 @@
                 </thead>
             </table>
         </div>
-        <br>
-        <div>
+        <div id="static-map-wrap">
             <img id="img_static_map" hidden>
         </div>
-        <br>
         <div>
             <button type="button" id="btn_save_landing_plot" disabled="true" hidden="true">Save Landing Plots</button>
             <button type="button" id="btn_save_flight_plot" disabled="true" hidden="true">Save Flight Plots</button>
