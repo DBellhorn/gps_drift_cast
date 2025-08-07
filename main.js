@@ -1268,13 +1268,13 @@ function getWeathercockInputValues(windSpeed, speedId) {
         return null;
     }
             
-    const distanceValue = parseInt(distanceInput.value);
+    const distanceValue = parseInt(distanceInput.value.replaceAll(',', ''));
     if (isNaN(distanceValue)) {
         console.debug(`Weathercock distance is not a valid integer: ${distanceValue}`);
         return null;
     }
 
-    const apogeeValue = parseInt(apogeeInput.value);
+    const apogeeValue = parseInt(apogeeInput.value.replaceAll(',', ''));
     if (isNaN(distanceValue)) {
         console.debug(`Weathercock apogee is not a valid integer: ${apogeeValue}`);
         return null;
