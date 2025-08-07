@@ -9,24 +9,30 @@ const googleMapApiKey = 'YOUR_API_KEY';
 
 
 // Declare some ID strings so they do not have to be in-line everywhere
-const launchSiteNameId = 'launch_site_name';
-const launchSiteLatitudeId = 'launch_site_latitude';
-const launchSiteLongitudeId = 'launch_site_longitude';
-const launchSiteElevationId = 'launch_site_elevation';
 const waiverLatitudeId = 'waiver_latitude';
 const waiverLongitudeId = 'waiver_longitude';
 const waiverRadiusId = 'waiver_radius';
 const waiverAltitudeId = 'waiver_altitude';
 
-// IDs of the launch time inputs
-const launchDateId = 'launch_date';
-const startTimeId = 'start_time';
-const endTimeId = 'end_time';
-const apogeeAltitudeId = 'launch_apogee';
-const dualDeployId = 'dual_deploy';
-const mainDescentRateId = 'decent_rate_main';
-const mainEventAltitudeId = 'main_event_altitude';
-const drogueDecentRateId = 'decent_rate_drogue';
+// Launch site input elements
+const launchSiteNameElement = document.getElementById('launch_site_name');
+const launchSiteLatitudeElement = document.getElementById('launch_site_latitude');
+const launchSiteLongitudeElement = document.getElementById('launch_site_longitude');
+const launchSiteElevationElement = document.getElementById('launch_site_elevation');
+const waiverLatitudeElement = document.getElementById(waiverLatitudeId);
+const waiverLongitudeElement = document.getElementById(waiverLongitudeId);
+const waiverRadiusElement = document.getElementById(waiverRadiusId);
+const waiverAltitudeElement = document.getElementById(waiverAltitudeId);
+
+// Launch time input elements
+const launchDateElement = document.getElementById('launch_date');
+const startTimeElement = document.getElementById('start_time');
+const endTimeElement = document.getElementById('end_time');
+const apogeeAltitudeElement = document.getElementById('launch_apogee');
+const dualDeployElement = document.getElementById('dual_deploy');
+const mainDescentRateElement = document.getElementById('decent_rate_main');
+const mainEventAltitudeElement = document.getElementById('main_event_altitude');
+const drogueDecentRateElement = document.getElementById('decent_rate_drogue');
 
 // IDs of the launch site buttons
 const selLaunchSiteNameId = 'select_launch_site';
@@ -77,11 +83,11 @@ function setEndTimeValue(endHour) {
     if (isNaN(endHour)) throw new TypeError(`Invalid end hour: ${endHour}.`);
 
     if (endHour > 23) {
-        document.getElementById(endTimeId).value = '00:00';
+        endTimeElement.value = '00:00';
     } else if (endHour < 10) {
-        document.getElementById(endTimeId).value = `0${endHour}:00`;
+        endTimeElement.value = `0${endHour}:00`;
     } else {
-        document.getElementById(endTimeId).value = `${endHour}:00`;
+        endTimeElement.value = `${endHour}:00`;
     }
 }
 
@@ -90,14 +96,14 @@ function setEndTimeValue(endHour) {
  * @returns {GeoLocation} Coordinates of launch site if successful. Otherwise returns null.
  */
 function getLaunchSiteLocation() {
-    const latitude = parseFloat(document.getElementById(launchSiteLatitudeId).value);
+    const latitude = parseFloat(launchSiteLatitudeElement.value);
     if (isNaN(latitude)) {
         return null;
     } else if ((latitude > 90.0) || (latitude < -90.0)) {
         return null;
     }
 
-    const longitude = parseFloat(document.getElementById(launchSiteLongitudeId).value);
+    const longitude = parseFloat(launchSiteLongitudeElement.value);
     if (isNaN(longitude)) {
         return null;
     } else if ((longitude > 180.0) || (longitude < -180.0)) {
@@ -156,7 +162,7 @@ function requestLaunchSiteElevation(latitude, longitude, launchSiteName) {
         })
         .then((data) => {
             if (data.results.length > 0) {
-                document.getElementById(launchSiteElevationId).value = data.results[0].elevation;
+                launchSiteElevationElement.value = data.results[0].elevation;
 
                 if (null != dbLaunchSites) {
                     // Begin the save process now that we have all the launch site's data
@@ -179,7 +185,7 @@ function requestLaunchSiteElevation(latitude, longitude, launchSiteName) {
                         }
                     };
                 } else {
-                    console.debug(`Obtained an elevation ${launchSiteElevationId} for ${launchSiteName}, but the database has not been loaded.`);
+                    console.debug(`Obtained an elevation ${launchSiteElevationElement.value} for ${launchSiteName}, but the database has not been loaded.`);
                 }
             }
         })
@@ -220,41 +226,38 @@ function isNumeric(str) {
  * @returns {boolean} True if launch site data is okay. False otherwise.
  */
 function verifyLaunchSiteData() {
-    const elementLaunchSiteName = document.getElementById(launchSiteNameId);
-    var launchSiteName = elementLaunchSiteName.value.trim();
+    var launchSiteName = launchSiteNameElement.value.trim();
     if (0 == launchSiteName.length) {
-        elementLaunchSiteName.focus();
+        launchSiteNameElement.focus();
         window.alert('A name is required to save a launch site.');
         return false;
     } else if (-1 != launchSiteNames.indexOf(launchSiteName)) {
-        elementLaunchSiteName.focus();
+        launchSiteNameElement.focus();
         window.alert('This name is already used for another launch site.');
         return false;
     }
 
-    const elementLaunchSiteLatitude = document.getElementById(launchSiteLatitudeId);
-    if (!isNumeric(elementLaunchSiteLatitude.value)) {
-        elementLaunchSiteLatitude.focus();
+    if (!isNumeric(launchSiteLatitudeElement.value)) {
+        launchSiteLatitudeElement.focus();
         window.alert('The launch site latitude is not a number.');
         return false;
     } else {
-        let launchSiteLatitude = parseFloat(elementLaunchSiteLatitude.value);
+        let launchSiteLatitude = parseFloat(launchSiteLatitudeElement.value);
         if (launchSiteLatitude < -90 || launchSiteLatitude > 90) {
-            elementLaunchSiteLatitude.focus();
+            launchSiteLatitudeElement.focus();
             window.alert('The launch site latitude is not within the valid range.');
             return false;
         }
     }
 
-    const elementLaunchSiteLongitude = document.getElementById(launchSiteLongitudeId);
-    if (!isNumeric(elementLaunchSiteLongitude.value)) {
-        elementLaunchSiteLongitude.focus();
+    if (!isNumeric(launchSiteLongitudeElement.value)) {
+        launchSiteLongitudeElement.focus();
         window.alert('The launch site longitude is not a number.');
         return false;
     } else {
-        let launchSiteLongitude = parseFloat(elementLaunchSiteLongitude.value);
+        let launchSiteLongitude = parseFloat(launchSiteLongitudeElement.value);
         if (launchSiteLongitude < -180 || launchSiteLongitude > 180) {
-            elementLaunchSiteLongitude.focus();
+            launchSiteLongitudeElement.focus();
             window.alert('The launch site longitude is not within the valid range.');
             return false;
         }
@@ -272,7 +275,7 @@ function saveLaunchSiteToDb() {
         return false;
     }
 
-    const launchSiteName = document.getElementById(launchSiteNameId).value;
+    const launchSiteName = launchSiteNameElement.value;
     if (0 == launchSiteName.length) {
         console.debug(`Unable to save launch site with invalid name.`);
         return false;
@@ -285,24 +288,24 @@ function saveLaunchSiteToDb() {
     }
 
     // Change to a known invalid value for easier checks upon loading.
-    let waiverLatitude = parseFloat(document.getElementById(waiverLatitudeId).value);
+    let waiverLatitude = parseFloat(waiverLatitudeElement.value);
     if (isNaN(waiverLatitude) || waiverLatitude < -90.0 || waiverLatitude > 90.0) {
         waiverLatitude = 360.0;
     }
 
-    let waiverLongitude = parseFloat(document.getElementById(waiverLongitudeId).value);
+    let waiverLongitude = parseFloat(waiverLongitudeElement.value);
     if (isNaN(waiverLongitude) || waiverLongitude < -180.0 || waiverLongitude > 180.0) {
         waiverLongitude = 360.0;
     }
 
-    let wavierRadius = parseFloat(document.getElementById(waiverRadiusId).value);
+    let wavierRadius = parseFloat(waiverRadiusElement.value.replaceAll(',', ''));
     if (wavierRadius < 0.0) {
         wavierRadius = 0.0;
     }
 
     // Altitude and Elevation are hidden fields, so they should always have valid values
-    const launchSiteElevation = parseInt(document.getElementById(launchSiteElevationId).value);
-    const waiverAltitude = parseInt(document.getElementById(waiverAltitudeId).value);
+    const launchSiteElevation = parseInt(launchSiteElevationElement.value);
+    const waiverAltitude = parseInt(waiverAltitudeElement.value.replaceAll(',', ''));
 
     // Begin the save process now that we have all the launch site's data
     const objectStore = dbLaunchSites.transaction('DriftCast_Sites', 'readwrite').objectStore('DriftCast_Sites');
@@ -388,12 +391,12 @@ async function deleteCurrentLaunchSite() {
  * @param {boolean} isDisabled - Value to set all launch site UI elements' disabled flags.
  */
 function swapLaunchSiteInputDisabled(isDisabled) {
-    document.getElementById(launchSiteNameId).disabled = isDisabled;
-    document.getElementById(launchSiteLatitudeId).disabled = isDisabled;
-    document.getElementById(launchSiteLongitudeId).disabled = isDisabled;
-    document.getElementById(waiverLatitudeId).disabled = isDisabled;
-    document.getElementById(waiverLongitudeId).disabled = isDisabled;
-    document.getElementById(waiverRadiusId).disabled = isDisabled;
+    launchSiteNameElement.disabled = isDisabled;
+    launchSiteLatitudeElement.disabled = isDisabled;
+    launchSiteLongitudeElement.disabled = isDisabled;
+    waiverLatitudeElement.disabled = isDisabled;
+    waiverLongitudeElement.disabled = isDisabled;
+    waiverRadiusElement.disabled = isDisabled;
 }
 
 /**
@@ -420,14 +423,14 @@ function updateLaunchSiteUI(newStatus) {
         document.getElementById(selLaunchSiteNameId).disabled = true;
 
         // Reset all the launch site inputs to initial values
-        document.getElementById(launchSiteNameId).value = '';
-        document.getElementById(launchSiteLatitudeId).value = '';
-        document.getElementById(launchSiteLongitudeId).value = '';
-        document.getElementById(waiverLatitudeId).value = '';
-        document.getElementById(waiverLongitudeId).value = '';
-        document.getElementById(waiverRadiusId).value = '';
-        document.getElementById(waiverAltitudeId).value = 0;
-        document.getElementById(launchSiteElevationId).value = -1;
+        launchSiteNameElement.value = '';
+        launchSiteLatitudeElement.value = '';
+        launchSiteLongitudeElement.value = '';
+        waiverLatitudeElement.value = '';
+        waiverLongitudeElement.value = '';
+        waiverRadiusElement.value = '';
+        waiverAltitudeElement.value = '';
+        launchSiteElevationElement.value = -1;
 
         // Allow the user to Save the new launch site or cancel out
         document.getElementById(btnLaunchSiteCancelId).hidden = false;
@@ -439,7 +442,7 @@ function updateLaunchSiteUI(newStatus) {
         swapLaunchSiteInputDisabled(false);
 
         // Override the name field as locked since the user is editing the selected site
-        document.getElementById(launchSiteNameId).disabled = true;
+        launchSiteNameElement.disabled = true;
 
         // Do not allow selecting a different launch site while editing one
         document.getElementById(selLaunchSiteNameId).disabled = true;
@@ -472,44 +475,44 @@ function updateLaunchSiteUI(newStatus) {
  * @param {cursor} dbCursor - Cursor returned from the launch site database.
  */
 function updateLaunchSiteDisplay(dbCursor) {
-    document.getElementById(launchSiteNameId).value = dbCursor.name;
-    document.getElementById(launchSiteLatitudeId).value = dbCursor.latitude;
-    document.getElementById(launchSiteLongitudeId).value = dbCursor.longitude;
-    document.getElementById(launchSiteElevationId).value = dbCursor.elevation;
+    launchSiteNameElement.value = dbCursor.name;
+    launchSiteLatitudeElement.value = dbCursor.latitude;
+    launchSiteLongitudeElement.value = dbCursor.longitude;
+    launchSiteElevationElement.value = dbCursor.elevation;
 
     // Switch to default display if waiver data has not been saved.
     if (isNaN(dbCursor.waiver_latitude)) {
-        document.getElementById(waiverLatitudeId).value = '';
+        waiverLatitudeElement.value = '';
     } else if (dbCursor.waiver_latitude < -90.0 || dbCursor.waiver_latitude > 90.0) {
-        document.getElementById(waiverLatitudeId).value = '';
+        waiverLatitudeElement.value = '';
     } else {
-        document.getElementById(waiverLatitudeId).value = dbCursor.waiver_latitude;
+        waiverLatitudeElement.value = dbCursor.waiver_latitude;
     }
 
     if (isNaN(dbCursor.waiver_longitude)) {
-        document.getElementById(waiverLongitudeId).value = '';
+        waiverLongitudeElement.value = '';
     } else if (dbCursor.waiver_longitude < -180.0 || dbCursor.waiver_longitude > 180.0) {
-        document.getElementById(waiverLongitudeId).value = '';
+        waiverLongitudeElement.value = '';
     } else {
-        document.getElementById(waiverLongitudeId).value = dbCursor.waiver_longitude;
+        waiverLongitudeElement.value = dbCursor.waiver_longitude;
     }
 
     if (isNaN(dbCursor.waiver_altitude || dbCursor.waiver_altitude <= 0.0)) {
-        document.getElementById(waiverAltitudeId).value = '';
+        waiverAltitudeElement.value = '';
     } else {
-        document.getElementById(waiverAltitudeId).value = dbCursor.waiver_altitude;
+        waiverAltitudeElement.value = dbCursor.waiver_altitude;
     }
 }
 
 /** Return all launch site related UI fields back to their default display values. */
 function resetLaunchSiteDisplay() {
     clearLaunchSiteSelector();
-    document.getElementById(launchSiteNameId).value = '';
-    document.getElementById(launchSiteLatitudeId).value = '';
-    document.getElementById(launchSiteLongitudeId).value = '';
-    document.getElementById(waiverLatitudeId).value = '';
-    document.getElementById(waiverLongitudeId).value = '';
-    document.getElementById(waiverRadiusId).value = '';
+    launchSiteNameElement.value = '';
+    launchSiteLatitudeElement.value = '';
+    launchSiteLongitudeElement.value = '';
+    waiverLatitudeElement.value = '';
+    waiverLongitudeElement.value = '';
+    waiverRadiusElement.value = '';
 }
 
 /**
@@ -708,13 +711,7 @@ function updateDriftResultTable(launchList) {
  */
 window.onload = () => {
     // Print a version into the log to help keep track between iterations.
-    console.log('GPS DriftCast 1.0');
-
-    const launchDateElement = document.getElementById(launchDateId);
-    const startTimeElement = document.getElementById(startTimeId);
-    const endTimeElement = document.getElementById(endTimeId);
-    const drogueDecentElement = document.getElementById(drogueDecentRateId);
-    const mainEventElement = document.getElementById(mainEventAltitudeId);
+    console.log('GPS DriftCast 1.0a');
 
     const currentDate = new Date();
 
@@ -869,7 +866,7 @@ window.onload = () => {
                 return;
             }
             // If the saved launch site is new, add its name to the selector
-            const launchSiteName = document.getElementById(launchSiteNameId).value;
+            const launchSiteName = launchSiteNameElement.value;
             if (-1 == launchSiteNames.indexOf(launchSiteName)) {
                 const selLaunchSiteNames = document.getElementById(selLaunchSiteNameId);
                 const launchSiteOption = document.createElement('option');
@@ -888,14 +885,14 @@ window.onload = () => {
                 updateLaunchSiteUI(LaunchSiteStatus.INACTIVE);
             }
 
-            let launchSiteElevation = parseInt(document.getElementById(launchSiteElevationId).value);
+            let launchSiteElevation = parseInt(launchSiteElevationElement.value);
 
             // Request an elevation lookup when it is set to the default -1.0 value
             if (launchSiteElevation < 0) {
                 const launchSiteLocation = getLaunchSiteLocation();
                 if (null != launchSiteLocation) {
-                    requestLaunchSiteElevation( document.getElementById(launchSiteLatitudeId).value,
-                                                document.getElementById(launchSiteLongitudeId).value,
+                    requestLaunchSiteElevation( launchSiteLatitudeElement.value,
+                                                launchSiteLongitudeElement.value,
                                                 launchSiteName);
                 } else {
                     console.debug('Unable to request launch site elevation without valid coordinates.');
@@ -903,50 +900,48 @@ window.onload = () => {
             }
         } else {
             // The user is editing an existing launch site
-            const latitudeField = document.getElementById(launchSiteLatitudeId);
-            let launchSiteLatitude = parseFloat(latitudeField.value);
+            let launchSiteLatitude = parseFloat(launchSiteLatitudeElement.value);
             if (isNaN(launchSiteLatitude)) {
-                latitudeField.focus();
+                launchSiteLatitudeElement.focus();
                 window.alert(`Launch site latitude is a required field.`);
                 return;
             }
             if (Math.abs(launchSiteLatitude) > 90) {
-                latitudeField.focus();
+                launchSiteLatitudeElement.focus();
                 window.alert(`Launch site latitude is not an expected value: ${launchSiteLatitude}`);
                 return;
             }
 
-            const longitudeField = document.getElementById(launchSiteLongitudeId);
-            let launchSiteLongitude = parseFloat(longitudeField.value);
+            let launchSiteLongitude = parseFloat(launchSiteLongitudeElement.value);
             if (isNaN(launchSiteLongitude)) {
-                latitudeField.focus();
+                launchSiteLatitudeElement.focus();
                 window.alert(`Launch site longitude is a required field.`);
                 return;
             }
             if (Math.abs(launchSiteLongitude) > 180) {
-                latitudeField.focus();
+                launchSiteLatitudeElement.focus();
                 window.alert(`Launch site longitude is not an expected value: ${launchSiteLongitude}`);
                 return;
             }
 
             // Begin the save process
             const objectStore = dbLaunchSites.transaction('DriftCast_Sites', 'readwrite').objectStore('DriftCast_Sites');
-            const launchSiteName = document.getElementById(launchSiteNameId).value;
+            const launchSiteName = launchSiteNameElement.value;
             const launchSiteRequest = objectStore.get(launchSiteName);
     
             launchSiteRequest.onsuccess = () => {
                 // Get the remaining launch site values from our UI
-                let waiverRadius = parseFloat(document.getElementById(waiverRadiusId).value);
+                let waiverRadius = parseFloat(waiverRadiusElement.value.replaceAll(',', ''));
                 if (isNaN(waiverRadius) || (waiverRadius < 0.0)) {
                     console.debug(`Changing wavier radius to zero for save due to an invalid value: ${waiverRadius}`);
                     waiverRadius = 0.0;
                 }
-                let waiverLatitude = parseFloat(document.getElementById(waiverLatitudeId).value);
+                let waiverLatitude = parseFloat(waiverLatitudeElement.value);
                 if (isNaN(waiverLatitude) || (Math.abs(waiverLatitude) > 90)) {
                     console.debug(`Replacing wavier latitude for save due to an invalid value: ${waiverLatitude}`);
                     waiverLatitude = 360.0;
                 }
-                let waiverLongitude = parseFloat(document.getElementById(waiverLongitudeId).value);
+                let waiverLongitude = parseFloat(waiverLongitudeElement.value);
                 if (isNaN(waiverLongitude) || (Math.abs(waiverLongitude) > 180)) {
                     console.debug(`Replacing wavier longitude for save due to an invalid value: ${waiverLongitude}`);
                     waiverLongitude = 360.0;
@@ -1073,7 +1068,7 @@ window.onload = () => {
     });
 
     // Show/hide the weathercock data entry fields when "Apply Weathercocking" is changed
-    document.getElementById(applyWeathercockingId).addEventListener("click", (event) => {
+    document.getElementById(applyWeathercockingId).addEventListener('click', (event) => {
         document.getElementById(weathercockDataId).hidden = !event.target.checked;
     });
 
@@ -1082,18 +1077,18 @@ window.onload = () => {
         input.addEventListener(
             'click',
             (event) => {
-                if (event.target.value == "single_deploy") {
-                    drogueDecentElement.disabled = true;
-                    mainEventElement.disabled = true;
+                if (event.target.value == 'single_deploy') {
+                    drogueDecentRateElement.disabled = true;
+                    mainEventAltitudeElement.disabled = true;
                 } else {
-                    if ("" == drogueDecentElement.value) {
-                        drogueDecentElement.value = 75;
+                    if ('' == drogueDecentRateElement.value) {
+                        drogueDecentRateElement.value = 75;
                     }
-                    if ("" == mainEventElement.value) {
-                        mainEventElement.value = 500;
+                    if ('' == mainEventAltitudeElement.value) {
+                        mainEventAltitudeElement.value = 500;
                     }
-                    drogueDecentElement.disabled = false;
-                    mainEventElement.disabled = false;
+                    drogueDecentRateElement.disabled = false;
+                    mainEventAltitudeElement.disabled = false;
                 }
             }
         );
@@ -1167,14 +1162,14 @@ window.onload = () => {
     document.getElementById(btnSaveLandingPlots).addEventListener('click', async (event) => {
         if (null != launchSimulationList && launchSimulationList.length > 0) {
             const launchSiteLocation = getLaunchSiteLocation();
-            let waiverLatitude = parseFloat(document.getElementById(waiverLatitudeId).value);
+            let waiverLatitude = parseFloat(waiverLatitudeElement.value);
             if (isNaN(waiverLatitude)) {
                 waiverLatitude = launchSiteLocation.latitude;
             } else if ((waiverLatitude > 90.0) || (waiverLatitude < -90.0)) {
                 waiverLatitude = launchSiteLocation.latitude;
             }
         
-            let waiverLongitude = parseFloat(document.getElementById(waiverLongitudeId).value);
+            let waiverLongitude = parseFloat(waiverLongitudeElement.value);
             if (isNaN(waiverLongitude)) {
                 waiverLongitude = launchSiteLocation.longitude;
             } else if ((waiverLongitude > 180.0) || (waiverLongitude < -180.0)) {
@@ -1182,7 +1177,7 @@ window.onload = () => {
             }
             const waiverLocation = new GeoLocation(waiverLatitude, waiverLongitude);
 
-            let waiverRadius = parseFloat(document.getElementById(waiverRadiusId).value);
+            let waiverRadius = parseFloat(waiverRadiusElement.value.replaceAll(',', ''));
             if (isNaN(waiverRadius)) {
                 waiverRadius = 0;
             }
@@ -1197,14 +1192,14 @@ window.onload = () => {
     document.getElementById(btnSaveFlightPlots).addEventListener('click', async (event) => {
         if (null != launchSimulationList && launchSimulationList.length > 0) {
             const launchSiteLocation = getLaunchSiteLocation();
-            let waiverLatitude = parseFloat(document.getElementById(waiverLatitudeId).value);
+            let waiverLatitude = parseFloat(waiverLatitudeElement.value);
             if (isNaN(waiverLatitude)) {
                 waiverLatitude = launchSiteLocation.latitude;
             } else if ((waiverLatitude > 90.0) || (waiverLatitude < -90.0)) {
                 waiverLatitude = launchSiteLocation.latitude;
             }
         
-            let waiverLongitude = parseFloat(document.getElementById(waiverLongitudeId).value);
+            let waiverLongitude = parseFloat(waiverLongitudeElement.value);
             if (isNaN(waiverLongitude)) {
                 waiverLongitude = launchSiteLocation.longitude;
             } else if ((waiverLongitude > 180.0) || (waiverLongitude < -180.0)) {
@@ -1212,7 +1207,7 @@ window.onload = () => {
             }
             const waiverLocation = new GeoLocation(waiverLatitude, waiverLongitude);
 
-            let waiverRadius = parseFloat(document.getElementById(waiverRadiusId).value);
+            let waiverRadius = parseFloat(waiverRadiusElement.value.replaceAll(',', ''));
             if (isNaN(waiverRadius)) {
                 waiverRadius = 0;
             }
@@ -1227,14 +1222,14 @@ window.onload = () => {
     document.getElementById(btnSaveGroundPaths).addEventListener('click', async (event) => {
         if (null != launchSimulationList && launchSimulationList.length > 0) {
             const launchSiteLocation = getLaunchSiteLocation();
-            let waiverLatitude = parseFloat(document.getElementById(waiverLatitudeId).value);
+            let waiverLatitude = parseFloat(waiverLatitudeElement.value);
             if (isNaN(waiverLatitude)) {
                 waiverLatitude = launchSiteLocation.latitude;
             } else if ((waiverLatitude > 90.0) || (waiverLatitude < -90.0)) {
                 waiverLatitude = launchSiteLocation.latitude;
             }
         
-            let waiverLongitude = parseFloat(document.getElementById(waiverLongitudeId).value);
+            let waiverLongitude = parseFloat(waiverLongitudeElement.value);
             if (isNaN(waiverLongitude)) {
                 waiverLongitude = launchSiteLocation.longitude;
             } else if ((waiverLongitude > 180.0) || (waiverLongitude < -180.0)) {
@@ -1242,7 +1237,7 @@ window.onload = () => {
             }
             const waiverLocation = new GeoLocation(waiverLatitude, waiverLongitude);
 
-            let waiverRadius = parseFloat(document.getElementById(waiverRadiusId).value);
+            let waiverRadius = parseFloat(waiverRadiusElement.value.replaceAll(',', ''));
             if (isNaN(waiverRadius)) {
                 waiverRadius = 0;
             }
@@ -1298,15 +1293,15 @@ function loadWeathercockData(resultsData) {
     let applyWeathercockAdjustment = document.getElementById(applyWeathercockingId).checked;
     if (applyWeathercockAdjustment) {
         // Zero wind uses the rocket's normal apogee with no drifting
-        const rocketApogee = parseInt(document.getElementById(apogeeAltitudeId).value);
+        const rocketApogee = parseInt(apogeeAltitudeElement.value.replaceAll(',', ''));
         if (isNaN(rocketApogee)) {
             window.alert(`The rocket's apogee is not valid: ${rocketApogee}.`);
-            document.getElementById(apogeeAltitudeId).focus();
+            apogeeAltitudeElement.focus();
             return;
         }
         if (rocketApogee <= 0) {
             window.alert(`The rocket's apogee cannot be a negative value: ${rocketApogee}.`);
-            document.getElementById(apogeeAltitudeId).focus();
+            apogeeAltitudeElement.focus();
             return;
         }
         resultsData.push(new WeathercockWindData(0, 0, rocketApogee));
@@ -1423,9 +1418,9 @@ async function calculateLandingPlots() {
     // Start with an empty array to be filled with simulation data objects later
     const simulationList = [];
 
-    const launchTimes = new LaunchTimeData( document.getElementById(launchDateId).value,
-                                            document.getElementById(startTimeId).value,
-                                            document.getElementById(endTimeId).value);
+    const launchTimes = new LaunchTimeData( launchDateElement.value,
+                                            startTimeElement.value,
+                                            endTimeElement.value);
 
     // Verify the launch hour offsets are within our expectations
     if ((launchTimes.endHour < launchTimes.startHour) && (launchTimes.endHour > 0)) {
@@ -1442,7 +1437,7 @@ async function calculateLandingPlots() {
     }
 
     // Verify expected rocket altitudes are valid numbers
-    const rocketApogee = parseInt(document.getElementById(apogeeAltitudeId).value);
+    const rocketApogee = parseInt(apogeeAltitudeElement.value.replaceAll(',', ''));
     if (isNaN(rocketApogee)) {
         window.alert(`Apogee is not a valid number: ${rocketApogee}.`);
         return simulationList;
@@ -1462,21 +1457,21 @@ async function calculateLandingPlots() {
     }
 
     // Get the rocket's decent rate under the main parachute
-    const mainDescentRate = parseFloat(document.getElementById(mainDescentRateId).value);
+    const mainDescentRate = parseFloat(mainDescentRateElement.value);
     if (isNaN(mainDescentRate) || mainDescentRate <= 0.0) {
         console.debug(`Unable to calculate drift distance with an invalid main decent rate: ${mainDescentRate}`);
         return simulationList;
     }
 
     // Load the rocket's recovery data
-    let usingDualDeployoment = document.getElementById(dualDeployId).checked;
+    let usingDualDeployoment = dualDeployElement.checked;
     let mainDeployAltitude = -1;
     let drogueDecentRate = mainDescentRate;
 
     if (usingDualDeployoment) {
         // Ensure the values are positive
-        mainDeployAltitude = Math.abs(parseInt(document.getElementById(mainEventAltitudeId).value));
-        drogueDecentRate = Math.abs(parseInt(document.getElementById(drogueDecentRateId).value));
+        mainDeployAltitude = Math.abs(parseInt(mainEventAltitudeElement.value.replaceAll(',', '')));
+        drogueDecentRate = Math.abs(parseInt(drogueDecentRateElement.value));
 
         if (isNaN(mainDeployAltitude)) {
             window.alert(`Secondary deployment altitude is invalid: ${mainDeployAltitude}`);
@@ -1516,7 +1511,7 @@ async function calculateLandingPlots() {
         let rocketLocation = launchLocation.getCopy();
 
         // Grab the most accurate launch site elevation currently available
-        let launchSiteElevation = parseInt(document.getElementById(launchSiteElevationId).value);
+        let launchSiteElevation = parseInt(launchSiteElevationElement.value);
         if (isNaN(launchSiteElevation) || launchSiteElevation < 0) {
             launchSiteElevation = windForecast.groundElevation;
         }
