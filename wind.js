@@ -1,5 +1,9 @@
-import { GeoLocation, moveAlongBearingKilometers, feetToMeters } from "./geo.js";
+import { GeoLocation, moveAlongBearingKilometers, feetToMeters, metersToFeet } from "./geo.js";
+import { LaunchTimeData } from "./launch.js";
 //import { wind0900 } from "./hedley.js";
+
+const openMeteoWindAltitudes = [10, 80, 120];
+const openMeteoPressureLevels = [1000, 975, 950, 925, 900, 850, 800, 750, 700, 650, 600, 550, 500, 450, 400, 350, 300, 250, 200, 150, 100, 70, 50, 30, 20, 15, 10];
 
 /* Class storing wind speed and direction at a specific altitude. */
 class WindAtAltitude {
@@ -103,13 +107,23 @@ class WindForecastData {
      * @type {number}
      */
     #groundWindDirection = 0;
+    
+    /**
+     * Constructor initializes members to default values.
+     */
+    constructor() {
+        this.#model = '';
+        this.#windData = [];
+        this.#groundElevation = 0;
+        this.#groundWindSpeed = 0;
+        this.#groundWindDirection = 0;
+    }
 
     /**
      * Initializes to the provided wind speed and direction at the specified altitude.
      * @param {json} windJSON - A JSON formated object contaning raw data associated with a wind forecast.
-     * @throws {TypeError} Invalid windForecast.
      */
-    constructor(windJSON) {
+    loadWindsAloftData(windJSON) {
         this.#model = windJSON.model;
 
         // References to different wind data objects based on the prediction model
@@ -161,6 +175,21 @@ class WindForecastData {
         if ('groundSpd' in windJSON) {
             this.#groundWindDirection = windJSON['groundSpd'];
         }
+    }
+
+    /**
+     * Initialize members with the provided information.
+     * @param {number} elevation - Height (meters) above mean sea level at this forecast's location.
+     * @param {json} groundSpeed - Speed (knots) the wind is blowing at ground level. 
+     * @param {json} groundDirection - Direction (degrees from 0 north) the wind is blowing at ground level.
+     * @param {Array.<WindAtAltitude>} windArray - List of wind data at ascending altitudes.
+     */
+    loadOpenMeteoData(elevation, groundSpeed, groundDirection, windArray) {
+        this.#model = 'Open-Meteo';
+        this.#groundElevation = elevation;
+        this.#groundWindSpeed = groundSpeed;
+        this.#groundWindDirection = groundDirection;
+        this.#windData = windArray;
     }
 
     /**
@@ -263,7 +292,8 @@ async function getWindPredictionData(launchLocation, hourOffset) {
         })
         .then((windJSON) => {
             if (null != windJSON) {
-                windForecast = new WindForecastData(windJSON);
+                windForecast = new WindForecastData();
+                windForecast.loadWindsAloftData(windJSON);
             }
         })
         .catch(error => {
@@ -272,7 +302,213 @@ async function getWindPredictionData(launchLocation, hourOffset) {
 
     return windForecast;
 
-    // return new WindForecastData(wind0900);
+    // let theForecast = new WindForecastData();
+    // theForecast.loadWindsAloftData(wind0900);
+    // return theForecast;
+}
+
+/**
+ * Requests wind forecast data from Open-Meteo API to be provided as a JSON object.
+ * @param {GeoLocation} launchLocation - Coordinates of the launch location.
+ * @param {LaunchTimeData} launchTimes - Date, start time, and end time of the launch.
+ * @returns {Array.<WindForecastData>} Wind forecast data at the specified location and time. 'null' if an error occurred.
+ */
+async function getOpenMeteoWindPredictionData(launchLocation, launchTimes) {
+    let windForecastList = [];
+
+    // Begin forming a request for Open-Meteo's API with the launch location.
+    let fetchRequest = `https://api.open-meteo.com/v1/forecast?latitude=${launchLocation.latitude}&longitude=${launchLocation.longitude}`;
+    //let fetchRequest = `https://api.open-meteo.com/v1/forecast?latitude=${launchLocation.latitude}&longitude=${launchLocation.longitude}&models=ecmwf_ifs025`;
+
+    // Specify the launch's active hours.
+    fetchRequest += `&start_hour=${launchTimes.getStartTimeAsISOString()}&end_hour=${launchTimes.getEndTimeAsISOString()}`;
+
+    // Use the launch site's timezone
+    fetchRequest += '&timezone=auto';
+
+    // Request wind speeds to be in knots.
+    fetchRequest += '&wind_speed_unit=kn';
+
+    // Prepare for hourly forecast parameters.
+    fetchRequest += '&hourly=';
+
+    // Request wind speeds at set heights above ground level.
+    let addComma = false;
+    for (const altitude of openMeteoWindAltitudes) {
+        if (addComma) {
+            fetchRequest += ',';
+        } else {
+            addComma = true;
+        }
+        fetchRequest += `wind_speed_${altitude}m`;
+    }
+
+    // Request wind directions at set heights above ground level.
+    for (const altitude of openMeteoWindAltitudes) {
+        fetchRequest += `,wind_direction_${altitude}m`;
+    }
+
+    // Request wind speeds at all atmospheric pressure levels.
+    for (const pressure of openMeteoPressureLevels) {
+        fetchRequest +=`,wind_speed_${pressure}hPa`;
+    }
+
+    // Request wind directions at all atmospheric pressure levels.
+    for (const pressure of openMeteoPressureLevels) {
+        fetchRequest +=`,wind_direction_${pressure}hPa`;
+    }
+
+    // Request geopotential height at all atmospheric pressure levels.
+    for (const pressure of openMeteoPressureLevels) {
+        fetchRequest +=`,geopotential_height_${pressure}hPa`;
+    }
+
+    // In case the generated URL is required to download separate data for further debugging
+    //console.log(fetchRequest);
+    
+    try {
+        const openMeteoPromise = await fetch(fetchRequest);
+
+        if (openMeteoPromise.ok) {
+            const windJSON = await openMeteoPromise.json();
+
+            if ('hourly' in windJSON) {
+                const hourCount = launchTimes.endHourOffset - launchTimes.startHourOffset + 1;
+                if ('time' in windJSON.hourly) {
+                    if (hourCount != windJSON.hourly.time.length) {
+                        console.log(`Hour count ${hourCount} is different from wind times count ${windJSON.hourly.time.length}.`);
+                    }
+                }
+            
+                let groundElevation = 0;
+                if ('elevation' in windJSON) {
+                    if (null != windJSON.elevation) {
+                        groundElevation = windJSON.elevation;
+                    }
+                }
+
+                for (let hourIndex = 0; hourIndex < hourCount; ++hourIndex) {
+                    // Create arrays to hold converted data.
+                    let altitudeWinds = [];
+                    let pressureWinds = [];
+        
+                    // Request wind directions at set heights above ground level.
+                    for (const altitude of openMeteoWindAltitudes) {
+                        const speedName = `wind_speed_${altitude}m`;
+                        const directionName = `wind_direction_${altitude}m`;
+        
+                        if (speedName in windJSON.hourly && directionName in windJSON.hourly) {
+                            if (hourIndex >= windJSON.hourly[speedName].length) {
+                                console.log(`Altitude wind speed list ${windJSON.hourly[speedName].length} is too small for hour index ${hourIndex}.`);
+                                continue;
+                            }
+                            if (hourIndex >= windJSON.hourly[directionName].length) {
+                                console.log(`Altitude wind direction list ${windJSON.hourly[speedName].length} is too small for hour index ${hourIndex}.`);
+                                continue;
+                            }
+        
+                            const windSpeed = windJSON.hourly[speedName][hourIndex];
+                            const windDirection = windJSON.hourly[directionName][hourIndex];
+        
+                            if (null == windSpeed || null == windDirection) {
+                                console.log(`Wind at altitude ${altitude} at index ${hourIndex} is null.`);
+                                continue;
+                            }
+        
+                            if (undefined == windSpeed || undefined == windDirection) {
+                                console.log(`Wind at altitude ${altitude} at index ${hourIndex} is undefined.`);
+                                continue;
+                            }
+        
+                            altitudeWinds.push(new WindAtAltitude(metersToFeet(altitude), windSpeed, windDirection));
+                        }
+                    }
+        
+                    for (const pressure of openMeteoPressureLevels) {
+                        const speedName = `wind_speed_${pressure}hPa`;
+                        const directionName = `wind_direction_${pressure}hPa`;
+                        const heightName = `geopotential_height_${pressure}hPa`;
+        
+                        if (speedName in windJSON.hourly && directionName in windJSON.hourly && heightName in windJSON.hourly) {
+                            if (hourIndex >= windJSON.hourly[speedName].length) {
+                                console.log(`Altitude wind speed list ${windJSON.hourly[speedName].length} is too small for hour index ${hourIndex}.`);
+                                continue;
+                            }
+                            if (hourIndex >= windJSON.hourly[directionName].length) {
+                                console.log(`Altitude wind direction list ${windJSON.hourly[speedName].length} is too small for hour index ${hourIndex}.`);
+                                continue;
+                            }
+                            if (hourIndex >= windJSON.hourly[heightName].length) {
+                                console.log(`Altitude height list ${windJSON.hourly[heightName].length} is too small for hour index ${hourIndex}.`);
+                                continue;
+                            }
+        
+                            const windSpeed = windJSON.hourly[speedName][hourIndex];
+                            const windDirection = windJSON.hourly[directionName][hourIndex];
+                            const windHeight = windJSON.hourly[heightName][hourIndex];
+        
+                            if (null == windSpeed || null == windDirection || null == windHeight) {
+                                console.log(`Pressure ${pressure} wind at index ${hourIndex} is null.`);
+                                continue;
+                            }
+        
+                            if (undefined == windSpeed || undefined == windDirection || undefined == windHeight) {
+                                console.log(`Pressure ${pressure} wind at index ${hourIndex} is undefined.`);
+                                continue;
+                            }
+        
+                            pressureWinds.push(new WindAtAltitude(metersToFeet(windHeight - groundElevation), windSpeed, windDirection));
+                        }
+                    }
+        
+                    let groundWindSpeed = 0;
+                    let groundWindDirection = 0;
+                    let windList = [];
+                    let hourForecast = new WindForecastData();
+                    let highestWindAltitude = -1;
+
+                    // Use the altitude based data first.
+                    for (const altWind of altitudeWinds) {
+                        if (0 === windList.length) {
+                            // Set ground wind values based on the lowest entry.
+                            groundWindSpeed = altWind.windSpeed;
+                            groundWindDirection = altWind.windDirection;
+                            windList.push(new WindAtAltitude(0, groundWindSpeed, groundWindDirection));
+                        }
+                        windList.push(altWind);
+                        highestWindAltitude = altWind.altitude;
+                    }
+
+                    // Now add all the atmospheric pressure based wind.
+                    for (const presWind of pressureWinds) {
+                        // Ignore any entries at lower altitude than the existing data.
+                        if (presWind.altitude <= highestWindAltitude)
+                            continue;
+
+                        if (0 == windList.length) {
+                            // Set ground wind values if no altitude entry was used.
+                            groundWindSpeed = presWind.windSpeed;
+                            groundWindDirection = presWind.windDirection;
+                            windList.push(new WindAtAltitude(0, groundWindSpeed, groundWindDirection));
+                        }
+                        windList.push(presWind);
+                    }
+
+                    hourForecast.loadOpenMeteoData(groundElevation, groundWindSpeed, groundWindDirection, windList);
+                    windForecastList.push(hourForecast);
+                }
+            } else {
+                console.debug('JSON object returned by Open-Meteo does not contain an [hourly] member.');
+                console.debug(windJSON);
+            }
+        } else {
+            console.error(`Open-Meteo response status: ${openMeteoPromise.status}`);
+        }
+    } catch (error) {
+        console.error(error.message);
+    }
+
+    return windForecastList;
 }
 
 /**
@@ -401,4 +637,4 @@ function driftWithWind(rocketLocation, windSpeed, windDirection, decentRate, des
 export { WindAtAltitude, WindForecastData, WeathercockWindData };
 
 // Export our functions
-export { getWindPredictionData, getWindBandPercentage, getAverageWindSpeed, getAverageWindDirection, driftWithWind };
+export { getWindPredictionData, getOpenMeteoWindPredictionData, getWindBandPercentage, getAverageWindSpeed, getAverageWindDirection, driftWithWind };
