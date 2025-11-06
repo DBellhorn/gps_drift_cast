@@ -10,6 +10,13 @@ class LaunchTimeData {
     #launchDate = null;
 
     /**
+     * The date on which this launch concludes. Includes final hour.
+     * @private
+     * @type {Date}
+     */
+    #endDateWithHour = null;
+
+    /**
      * The hour (0 - 23) when this launch ends.
      * @private
      * @type {number}
@@ -86,13 +93,15 @@ class LaunchTimeData {
         // Store the launch's date and starting hour.
         this.#launchDate = new Date(numYear, numMonth - 1, numDay, startHour);
 
+        // Store the launch's date and ending hour.
+        this.#endDateWithHour = new Date(numYear, numMonth - 1, numDay, this.#endHour);
+
         // Calculate the offset of this launch's start time from now in hours.
         let rightNow = new Date();
-        let endDateWithHour = new Date(numYear, numMonth - 1, numDay, this.#endHour);
 
         // Now we can store offsets from now to the start and end hours.
         this.#startHourOffset = Math.ceil((this.#launchDate - rightNow) / 3600000);
-        this.#endHourOffset = Math.ceil((endDateWithHour - rightNow) / 3600000);
+        this.#endHourOffset = Math.ceil((this.#endDateWithHour - rightNow) / 3600000);
     }
 
     /**
@@ -125,6 +134,42 @@ class LaunchTimeData {
      */
     get endHourOffset() {
         return this.#endHourOffset;
+    }
+
+    /**
+     * Generates a string version of the date and start time according to the ISO 8601 standard.
+     * @returns {string} Date formatted according to ISO 8601 standard.
+     */
+    getStartTimeAsISOString() {
+        const startMonth = this.#launchDate.getMonth() + 1;
+        return `${this.#launchDate.getFullYear()}-${startMonth.toString().padStart(2, '0')}-${this.#launchDate.getDate().toString().padStart(2, '0')}T${this.#launchDate.getHours().toString().padStart(2, '0')}:00`;
+    }
+
+    /**
+     * Generates a string version of the date and end time according to the ISO 8601 standard.
+     * @returns {string} Date formatted according to ISO 8601 standard.
+     */
+    getEndTimeAsISOString() {
+        const endMonth = this.#endDateWithHour.getMonth() + 1;
+        return `${this.#endDateWithHour.getFullYear()}-${endMonth.toString().padStart(2, '0')}-${this.#endDateWithHour.getDate().toString().padStart(2, '0')}T${this.#endDateWithHour.getHours().toString().padStart(2, '0')}:00`;
+    }
+
+    /**
+     * Generates a string version of the date and start time according to the ISO 8601 standard.
+     * @returns {string} Date formatted according to ISO 8601 standard.
+     */
+    getUTCStartTimeAsISOString() {
+        const startUTCMonth = this.#launchDate.getUTCMonth() + 1;
+        return `${this.#launchDate.getUTCFullYear()}-${startUTCMonth.toString().padStart(2, '0')}-${this.#launchDate.getUTCDate().toString().padStart(2, '0')}T${this.#launchDate.getUTCHours().toString().padStart(2, '0')}:00`;
+    }
+
+    /**
+     * Generates a string version of the date and end time according to the ISO 8601 standard.
+     * @returns {string} Date formatted according to ISO 8601 standard.
+     */
+    getUTCEndTimeAsISOString() {
+        const endUTCMonth = this.#endDateWithHour.getUTCMonth() + 1;
+        return `${this.#endDateWithHour.getUTCFullYear()}-${endUTCMonth.toString().padStart(2, '0')}-${this.#endDateWithHour.getUTCDate().toString().padStart(2, '0')}T${this.#endDateWithHour.getUTCHours().toString().padStart(2, '0')}:00`;
     }
 }
 
