@@ -7,7 +7,6 @@ import { getHourColor } from "./map_colors.js";
 
 const googleMapApiKey = 'YOUR_API_KEY';
 
-
 // Declare some ID strings so they do not have to be in-line everywhere
 const waiverLatitudeId = 'waiver_latitude';
 const waiverLongitudeId = 'waiver_longitude';
@@ -34,28 +33,29 @@ const mainDescentRateElement = document.getElementById('decent_rate_main');
 const mainEventAltitudeElement = document.getElementById('main_event_altitude');
 const drogueDecentRateElement = document.getElementById('decent_rate_drogue');
 
-// IDs of the launch site buttons
-const selLaunchSiteNameId = 'select_launch_site';
-const btnLaunchSiteCancelId = 'btn_site_cancel';
-const btnLaunchSiteSaveId = 'btn_site_save';
-const btnLaunchSiteEditId = 'btn_site_edit';
-const btnLaunchSiteNewId = 'btn_site_new';
-const btnLaunchSiteDeleteId = 'btn_site_delete';
+// Launch site buttons
+const launchSiteSelector = document.getElementById('select_launch_site');
+const launchSiteCancelButton = document.getElementById('btn_site_cancel');
+const launchSiteSaveButton = document.getElementById('btn_site_save');
+const launchSiteEditButton = document.getElementById('btn_site_edit');
+const launchSiteNewButton = document.getElementById('btn_site_new');
+const launchSiteDeleteButton = document.getElementById('btn_site_delete');
 
-// IDs of the weathercock inputs
-const applyWeathercockingId = 'apply_weathercocking';
-const weathercockDataId = 'weathercock_data';
+// Weathercock input elements
+const applyWeathercockingElement = document.getElementById('apply_weathercocking')
+const weathercockDataElement = document.getElementById('weathercock_data')
 
-const btnCalculateDrift = 'btn_calculate_drift';
-const btnSaveLandingPlots = 'btn_save_landing_plot';
-const btnSaveFlightPlots = 'btn_save_flight_plot';
-const btnSaveGroundPaths = 'btn_save_ground_paths';
+// Button elements
+const calculateDriftButton = document.getElementById('btn_calculate_drift');
+const saveLandingPlotsButton = document.getElementById('btn_save_landing_plot');
+const saveFlightPlotsButton = document.getElementById('btn_save_flight_plot');
+const saveGroundPathsButton = document.getElementById('btn_save_ground_paths');
 
-// Drift result display IDs
-const imgStaticMapId = 'img_static_map';
-const driftResultDivId = 'drift_result_div';
-const driftResultTableId = 'drift_result_table';
-const statusDisplayId = 'status_display';
+// Drift result display elements
+const staticMapImage = document.getElementById('img_static_map');
+const driftResultDiv = document.getElementById('drift_result_div');
+const driftResultTable = document.getElementById('drift_result_table');
+const statusDisplayElement = document.getElementById('status_display');
 
 // Hold an instance of a db object for us to store the IndexedDB data in
 let dbLaunchSites = null;
@@ -203,10 +203,9 @@ function requestLaunchSiteElevation(latitude, longitude, launchSiteName) {
 /* Helper to reset all elements associated with the launch site selector. */
 function clearLaunchSiteSelector() {
     launchSiteNames = [];
-    const selLaunchSiteNames = document.getElementById(selLaunchSiteNameId);
 
-    while (selLaunchSiteNames.options.length > 0) {
-        selLaunchSiteNames.remove(selLaunchSiteNames.options.length - 1);
+    while (launchSiteSelector.options.length > 0) {
+        launchSiteSelector.remove(launchSiteSelector.options.length - 1);
     }
 }
 
@@ -344,7 +343,6 @@ async function deleteCurrentLaunchSite() {
     }
 
     // Check the launch site selection input for the current launch site's name
-    const launchSiteSelector = document.getElementById(selLaunchSiteNameId);
     const launchSiteName = launchSiteSelector.value;
     
     // Verify the user really meant to delete the launch site before proceeding
@@ -413,19 +411,19 @@ function updateLaunchSiteUI(newStatus) {
         swapLaunchSiteInputDisabled(false);
 
         // Disable the launch site selector since it is empty
-        document.getElementById(selLaunchSiteNameId).disabled = true;
+        launchSiteSelector.disabled = true;
 
         // No need for any buttons other than Save to start
-        document.getElementById(btnLaunchSiteCancelId).hidden = true;
-        document.getElementById(btnLaunchSiteSaveId).hidden = false;
-        document.getElementById(btnLaunchSiteEditId).hidden = true;
-        document.getElementById(btnLaunchSiteDeleteId).hidden = true;
-        document.getElementById(btnLaunchSiteNewId).hidden = true;
+        launchSiteCancelButton.hidden = true;
+        launchSiteSaveButton.hidden = false;
+        launchSiteEditButton.hidden = true;
+        launchSiteDeleteButton.hidden = true;
+        launchSiteNewButton.hidden = true;
     } else if (LaunchSiteStatus.CREATING == newStatus) {
         swapLaunchSiteInputDisabled(false);
 
         // Do not allow selecting a different launch site while creating one
-        document.getElementById(selLaunchSiteNameId).disabled = true;
+        launchSiteSelector.disabled = true;
 
         // Reset all the launch site inputs to initial values
         launchSiteNameElement.value = '';
@@ -438,11 +436,11 @@ function updateLaunchSiteUI(newStatus) {
         launchSiteElevationElement.value = -1;
 
         // Allow the user to Save the new launch site or cancel out
-        document.getElementById(btnLaunchSiteCancelId).hidden = false;
-        document.getElementById(btnLaunchSiteSaveId).hidden = false;
-        document.getElementById(btnLaunchSiteEditId).hidden = true;
-        document.getElementById(btnLaunchSiteDeleteId).hidden = true;
-        document.getElementById(btnLaunchSiteNewId).hidden = true;
+        launchSiteCancelButton.hidden = false;
+        launchSiteSaveButton.hidden = false;
+        launchSiteEditButton.hidden = true;
+        launchSiteDeleteButton.hidden = true;
+        launchSiteNewButton.hidden = true;
     } else if (LaunchSiteStatus.EDITING == newStatus) {
         swapLaunchSiteInputDisabled(false);
 
@@ -450,26 +448,26 @@ function updateLaunchSiteUI(newStatus) {
         launchSiteNameElement.disabled = true;
 
         // Do not allow selecting a different launch site while editing one
-        document.getElementById(selLaunchSiteNameId).disabled = true;
+        launchSiteSelector.disabled = true;
 
         // Allow the user to Save the new launch site or cancel out
-        document.getElementById(btnLaunchSiteCancelId).hidden = false;
-        document.getElementById(btnLaunchSiteSaveId).hidden = false;
-        document.getElementById(btnLaunchSiteEditId).hidden = true;
-        document.getElementById(btnLaunchSiteDeleteId).hidden = true;
-        document.getElementById(btnLaunchSiteNewId).hidden = true;
+        launchSiteCancelButton.hidden = false;
+        launchSiteSaveButton.hidden = false;
+        launchSiteEditButton.hidden = true;
+        launchSiteDeleteButton.hidden = true;
+        launchSiteNewButton.hidden = true;
     } else { // Defaulting to LaunchSiteStatus.INACTIVE
         swapLaunchSiteInputDisabled(true);
 
         // Allow the user to select a different launch site
-        document.getElementById(selLaunchSiteNameId).disabled = false;
+        launchSiteSelector.disabled = false;
 
         // Allow the user to Save the new launch site or cancel out
-        document.getElementById(btnLaunchSiteCancelId).hidden = true;
-        document.getElementById(btnLaunchSiteSaveId).hidden = true;
-        document.getElementById(btnLaunchSiteEditId).hidden = false;
-        document.getElementById(btnLaunchSiteDeleteId).hidden = false;
-        document.getElementById(btnLaunchSiteNewId).hidden = false;
+        launchSiteCancelButton.hidden = true;
+        launchSiteSaveButton.hidden = true;
+        launchSiteEditButton.hidden = false;
+        launchSiteDeleteButton.hidden = false;
+        launchSiteNewButton.hidden = false;
     }
 
     currentLaunchSiteStatus = newStatus;
@@ -526,7 +524,6 @@ function resetLaunchSiteDisplay() {
  * @param {Array.<LaunchSimulationData>} launchList - A new table row will be added for each launch.
  */
 function updateStaticLandingScatterImage(launchList) {
-    const staticMapImage = document.getElementById(imgStaticMapId);
     staticMapImage.hidden = false;
 
     // The beginning of the URL does not change.
@@ -589,7 +586,6 @@ function updateStaticLandingScatterImage(launchList) {
  * @param {Array.<LaunchSimulationData>} launchList - A new table row will be added for each launch.
  */
 function updateDriftResultTable(launchList) {
-    const driftResultTable = document.getElementById(driftResultTableId);
     if (null == driftResultTable) {
         return;
     }
@@ -707,7 +703,7 @@ function updateDriftResultTable(launchList) {
     driftResultTable.appendChild(driftResultBody);
 
     // Switch the table to visible now that it has been filled out.
-    document.getElementById(driftResultDivId).hidden = false;
+    driftResultDiv.hidden = false;
 }
 
 /**
@@ -716,7 +712,7 @@ function updateDriftResultTable(launchList) {
  */
 window.onload = () => {
     // Print a version into the log to help keep track between iterations.
-    console.log('GPS DriftCast 1.1');
+    console.log('GPS DriftCast 1.1a');
 
     const currentDate = new Date();
 
@@ -776,7 +772,6 @@ window.onload = () => {
             console.log(`Loading ${countRequest.result} launch sites from our database.`);
             if (countRequest.result > 0) {
                 let copyDataToUi = true;
-                const selLaunchSiteNames = document.getElementById(selLaunchSiteNameId);
 
                 // Ensure we do not add duplicate entries
                 clearLaunchSiteSelector();
@@ -791,7 +786,7 @@ window.onload = () => {
                         const launchSiteOption = document.createElement('option');
                         launchSiteOption.value = cursor.value.name;
                         launchSiteOption.text = cursor.value.name;
-                        selLaunchSiteNames.add(launchSiteOption);
+                        launchSiteSelector.add(launchSiteOption);
 
                         // Update our cached data associated with the selector
                         launchSiteNames.push(cursor.value.name);
@@ -842,7 +837,7 @@ window.onload = () => {
     };
 
     // Register to handle clicking the Save launch site button
-    document.getElementById(btnLaunchSiteSaveId).addEventListener('click', (event) => {
+    launchSiteSaveButton.addEventListener('click', (event) => {
         if (LaunchSiteStatus.CREATING == currentLaunchSiteStatus || LaunchSiteStatus.NOSAVES == currentLaunchSiteStatus) {
             // Verify all the required data fields contain valid values
             if (!verifyLaunchSiteData()) {
@@ -851,15 +846,14 @@ window.onload = () => {
             // If the saved launch site is new, add its name to the selector
             const launchSiteName = launchSiteNameElement.value;
             if (-1 == launchSiteNames.indexOf(launchSiteName)) {
-                const selLaunchSiteNames = document.getElementById(selLaunchSiteNameId);
                 const launchSiteOption = document.createElement('option');
                 launchSiteOption.value = launchSiteName;
                 launchSiteOption.text = launchSiteName;
-                selLaunchSiteNames.add(launchSiteOption);
+                launchSiteSelector.add(launchSiteOption);
 
                 // Update our cached data associated with the selector
                 launchSiteNames.push(launchSiteName);
-                selLaunchSiteNames.selectedIndex = selLaunchSiteNames.options.length - 1;
+                launchSiteSelector.selectedIndex = launchSiteSelector.options.length - 1;
             }
 
             // Perform the actual save. Another will occur later if a new elevation is obtained
@@ -957,15 +951,15 @@ window.onload = () => {
     });
 
     // Register to handle clicking the New launch site button
-    document.getElementById(btnLaunchSiteNewId).addEventListener('click', (event) => {
+    launchSiteNewButton.addEventListener('click', (event) => {
         updateLaunchSiteUI(LaunchSiteStatus.CREATING);
     });
 
     // Register to handle clicking the Cancel launch site button
-    document.getElementById(btnLaunchSiteCancelId).addEventListener('click', (event) => {
+    launchSiteCancelButton.addEventListener('click', (event) => {
         if (null != dbLaunchSites) {
             // Check the launch site selection input for what to display
-            const previousLaunchSiteName = document.getElementById(selLaunchSiteNameId).value;
+            const previousLaunchSiteName = launchSiteSelector.value;
 
             if (previousLaunchSiteName.length > 0) {
                 // Retrieve the selected launch site's details from our database
@@ -981,17 +975,17 @@ window.onload = () => {
     });
 
     // Register to handle clicking the Edit launch site button
-    document.getElementById(btnLaunchSiteEditId).addEventListener('click', (event) => {
+    launchSiteEditButton.addEventListener('click', (event) => {
         updateLaunchSiteUI(LaunchSiteStatus.EDITING);
     });
 
     // Register to handle clicking the Delete launch site button
-    document.getElementById(btnLaunchSiteDeleteId).addEventListener('click', async (event) => {
+    launchSiteDeleteButton.addEventListener('click', async (event) => {
         await deleteCurrentLaunchSite();
     });
 
     // Handle selection of a different launch site from our list
-    document.getElementById(selLaunchSiteNameId).addEventListener('change', (changeEvent) => {
+    launchSiteSelector.addEventListener('change', (changeEvent) => {
         if (null != dbLaunchSites) {
             // Retrieve the selected launch site's details from our database
             dbLaunchSites.transaction('DriftCast_Sites')
@@ -1051,8 +1045,8 @@ window.onload = () => {
     });
 
     // Show/hide the weathercock data entry fields when "Apply Weathercocking" is changed
-    document.getElementById(applyWeathercockingId).addEventListener('click', (event) => {
-        document.getElementById(weathercockDataId).hidden = !event.target.checked;
+    applyWeathercockingElement.addEventListener('click', (event) => {
+        weathercockDataElement.hidden = !event.target.checked;
     });
 
     // Update recovery related UI fields when the users switches between single and dual deployment
@@ -1077,30 +1071,28 @@ window.onload = () => {
         );
     });
 
-    document.getElementById(btnCalculateDrift).addEventListener('click', async () => {
+    calculateDriftButton.addEventListener('click', async () => {
         // Disable the user's ability to save until our data is refreshed.
-        const saveLandingPlotsButton = document.getElementById(btnSaveLandingPlots);
         if (null != saveLandingPlotsButton) {
             saveLandingPlotsButton.disabled = true;
             saveLandingPlotsButton.hidden = true;
         }
-        const saveFlightPlotsButton = document.getElementById(btnSaveFlightPlots);
+
         if (null != saveFlightPlotsButton) {
             saveFlightPlotsButton.disabled = true;
             saveFlightPlotsButton.hidden = true;
         }
-        const saveGroundPathsButton = document.getElementById(btnSaveGroundPaths);
+
         if (null != saveGroundPathsButton) {
             saveGroundPathsButton.disabled = true;
             saveGroundPathsButton.hidden = true;
         }
 
         // Hide any previous drift results.
-        document.getElementById(imgStaticMapId).hidden = true;
-        document.getElementById(driftResultDivId).hidden = true;
+        staticMapImage.hidden = true;
+        driftResultDiv.hidden = true;
 
         // Let the user know something is happening in the background.
-        const statusDisplayElement = document.getElementById(statusDisplayId);
         if (null != statusDisplayElement) {
             statusDisplayElement.textContent = 'Calculating drift...';
             statusDisplayElement.hidden = false;
@@ -1129,11 +1121,11 @@ window.onload = () => {
                 saveGroundPathsButton.disabled = false;
                 saveGroundPathsButton.hidden = false;
             }
-            //updateStaticLandingScatterImage(launchSimulationList);
+            updateStaticLandingScatterImage(launchSimulationList);
             updateDriftResultTable(launchSimulationList);
 
             // Try to bring everything into view now the elements are visible.
-            document.getElementById(driftResultTableId).scrollIntoView({ behavior: "instant", block: "start" });
+            driftResultTable.scrollIntoView({ behavior: "instant", block: "start" });
         } else {
             // Let the user know something bad happened.
             if (null != statusDisplayElement) {
@@ -1143,7 +1135,7 @@ window.onload = () => {
     });
 
     // The user wants to save a KML file containing landing plots
-    document.getElementById(btnSaveLandingPlots).addEventListener('click', async (event) => {
+    saveLandingPlotsButton.addEventListener('click', async (event) => {
         if (null != launchSimulationList && launchSimulationList.length > 0) {
             const launchSiteLocation = getLaunchSiteLocation();
             let waiverLatitude = parseFloat(waiverLatitudeElement.value);
@@ -1173,7 +1165,7 @@ window.onload = () => {
     });
 
     // The user wants to save a KML file containing flight paths
-    document.getElementById(btnSaveFlightPlots).addEventListener('click', async (event) => {
+    saveFlightPlotsButton.addEventListener('click', async (event) => {
         if (null != launchSimulationList && launchSimulationList.length > 0) {
             const launchSiteLocation = getLaunchSiteLocation();
             let waiverLatitude = parseFloat(waiverLatitudeElement.value);
@@ -1203,7 +1195,7 @@ window.onload = () => {
     });
 
     // The user wants to save a KML file containing flight paths projected as ground tracks.
-    document.getElementById(btnSaveGroundPaths).addEventListener('click', async (event) => {
+    saveGroundPathsButton.addEventListener('click', async (event) => {
         if (null != launchSimulationList && launchSimulationList.length > 0) {
             const launchSiteLocation = getLaunchSiteLocation();
             let waiverLatitude = parseFloat(waiverLatitudeElement.value);
@@ -1274,7 +1266,7 @@ function getWeathercockInputValues(windSpeed, speedId) {
  * @returns {boolean} True if the user has supplied valid weathercock data.
  */
 function loadWeathercockData(resultsData) {
-    let applyWeathercockAdjustment = document.getElementById(applyWeathercockingId).checked;
+    let applyWeathercockAdjustment = applyWeathercockingElement.checked;
     if (applyWeathercockAdjustment) {
         // Zero wind uses the rocket's normal apogee with no drifting
         const rocketApogee = parseInt(apogeeAltitudeElement.value.replaceAll(',', ''));
