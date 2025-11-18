@@ -260,9 +260,9 @@ class LaunchSimulationData {
     /**
      * Indicates if the wind forecast was generated with the RAP or Open-Meteo model.
      * @private
-     * @type {boolean}
+     * @type {string}
      */
-    #usingRapModel;
+    #modelName;
 
     /**
      * Initializes a location using the provided latitude and longitude coordinates.
@@ -270,10 +270,10 @@ class LaunchSimulationData {
      * @param {number} hour - The time (hour as 0 - 23) this launch occurs.
      * @param {number} gndWindSpeed - The average wind speed (MPH) at ground level.
      * @param {number} gndWindDir - The average wind direction (0 degrees from North) at ground level.
-     * @param {boolean} usingRap - Indicates if the wind forecast was generated with the RAP or Open-Meteo model.
+     * @param {string} windModelName - Name of the forecast model used to generate wind data.
      * @throws {TypeError} Invalid time.
      */
-    constructor(ele, hour, gndWindSpeed, gndWindDir, usingRap) {
+    constructor(ele, hour, gndWindSpeed, gndWindDir, windModelName) {
         if (isNaN(ele)) throw new TypeError(`Invalid elevation: ${ele}`);
         if (isNaN(hour)) throw new TypeError(`Invalid hour: ${hour}`);
         if (isNaN(gndWindSpeed)) throw new TypeError(`Invalid ground wind speed: ${gndWindSpeed}`);
@@ -281,7 +281,7 @@ class LaunchSimulationData {
         this.#time = hour;
         this.#groundWindSpeed = gndWindSpeed;
         this.#groundWindDirection = gndWindDir;
-        this.#usingRapModel = usingRap;
+        this.#modelName = windModelName;
 
         if (ele >= 0) {
             this.#elevation = ele;
@@ -402,7 +402,7 @@ class LaunchSimulationData {
      * @returns {string} Name of the wind forecast model.
      */
     getWindModelName() {
-        return this.#usingRapModel ? 'RAP' : 'Open-Meteo';
+        return this.#modelName;
     }
 }
 
@@ -490,4 +490,93 @@ class DescentData {
     }
 }
 
-export { LaunchTimeData, LaunchPathPoint, LaunchSimulationData, DescentData };
+
+
+
+
+
+
+/* Stores all data related to the launch site location. */
+class LaunchLocationData {
+    /**
+     * Coordinates of the launch location.
+     * @private
+     * @type {GeoLocation}
+     */
+    #location;
+
+    /**
+     * Altitude Mean Sea Level (in feet) of the launch location.
+     * @private
+     * @type {number}
+     */
+    #altitude = 0;
+
+    /**
+     * Name identification of this launch site.
+     * @private
+     * @type {string}
+     */
+    #name = '';
+
+    /**
+     * Coordinates of the launch waiver if available.
+     * @private
+     * @type {GeoLocation}
+     */
+    #waiverLocation;
+
+    /**
+     * Radius (in nautical miles) of the launch waiver if available.
+     * @private
+     * @type {number}
+     */
+    #waiverRadius = -1;
+
+    /**
+     * Initializes details about the overall launch required for our simulations.
+     * @param {GeoLocation} launchLocation - Coordinates of the launch location.
+     * @param {number} locationAltitude - Altitide above Mean Sea Level (in feet) of the launch location.
+     */
+    constructor(launchLocation, locationAltitude, launchName = '') {
+        this.#location = launchLocation;
+        this.#altitude = locationAltitude;
+        this.#name = launchName;
+    }
+
+    /**
+     * Set the data fields defining this launch's waiver.
+     * @param {GeoLocation} location - Coordinates of the launch waiver's center.
+     * @param {number} radius - Distance (in nautical miles) the launch waiver extends from the center.
+     */
+    setWaiver(location, radius) {
+        this.#waiverLocation = location;
+        this.#waiverRadius = radius;
+    }
+
+    /**
+     * Get the location where this launch occurs.
+     * @type {GeoLocation}
+     */
+    get location() {
+        return this.#location;
+    }
+
+    /**
+     * Get the altitude above Mean Sea Level (in feet) where this launch occurs.
+     * @type {number}
+     */
+    get altitude() {
+        return this.#altitude;
+    }
+
+    /**
+     * Get the name associated with this launch location.
+     * @type {string}
+     */
+    get name() {
+        return this.#name;
+    }
+}
+
+export { LaunchTimeData, LaunchPathPoint, LaunchSimulationData, DescentData, LaunchLocationData };

@@ -1,9 +1,12 @@
 import { GeoLocation, feetToMeters, metersToFeet, moveAlongBearing, distanceBetweenLocations } from "./geo.js";
 import { saveLandingScatter, saveFlightScatter, saveGroundPaths } from "./kml.js";
-import { LaunchTimeData, LaunchPathPoint, LaunchSimulationData, DescentData } from "./launch.js";
-import { WindAtAltitude, WindForecastData, WeathercockWindData } from "./wind.js";
+import { LaunchTimeData, LaunchSimulationData, DescentData, LaunchLocationData } from "./launch.js";
+import { WeathercockWindData } from "./wind.js";
 import { getWindPredictionData, getOpenMeteoWindPredictionData, getWindBandPercentage, getAverageWindSpeed, getAverageWindDirection, driftWithWind } from "./wind.js";
 import { getHourColor } from "./map_colors.js";
+
+import { driftSimulation } from './drift_simulation.js';
+import { RocketBase, RocketApogee } from './rocket.js';
 
 const googleMapApiKey = 'YOUR_API_KEY';
 
@@ -78,6 +81,19 @@ var currentLaunchSiteStatus = LaunchSiteStatus.NOSAVES;
 const secondsInDay = 86400000;
 const maxDaysPreviousOpenMeteo = 9;
 const maxDaysFutureOpenMeteo = 15;
+
+/**
+ * Stores details about the rocket launch event provided by the user.
+ * @type {LaunchLocationData}
+ */
+let launchLocationDetails = null;
+
+/**
+ * Stores details about the rocket defined by the user.
+ * Which type of object derived from RocketBase is instantiated depends on the provided data.
+ * @type {RocketBase}
+ */
+let rocketDetails = null;
 
 /**
  * Update the value stored and displayed in the launch end time field.
@@ -712,7 +728,7 @@ function updateDriftResultTable(launchList) {
  */
 window.onload = () => {
     // Print a version into the log to help keep track between iterations.
-    console.log('GPS DriftCast 1.1a');
+    console.log('GPS DriftCast 1.2');
 
     const currentDate = new Date();
 
@@ -1418,15 +1434,28 @@ async function requestOpenMeteoWind() {
         console.debug('Open-Meteo wind forecast list is null.');
         return simulationList;
     }
+    
+    // Instantiate a new object to store the current launch event's details.
+    launchLocationDetails = new LaunchLocationData(launchLocation, windForecastList[0].groundElevation, launchSiteNameElement.value);
+
+    // Obtain the current launch event's waiver details if available.
+    const waiverRadius = parseFloat(waiverRadiusElement.value.replaceAll(',', ''));
+    if (!isNaN(waiverRadius)) {
+        const waiverLatitude = parseFloat(waiverLatitudeElement.value);
+        const waiverLongitude = parseFloat(waiverLongitudeElement.value);
+        if (!isNaN(waiverLatitude) && !isNaN(waiverLongitude)) {
+            launchLocationDetails.setWaiver(new GeoLocation(waiverLatitude, waiverLongitude), waiverRadius);
+        }
+    }
 
     // Verify expected rocket altitudes are valid numbers
-    const rocketApogee = parseInt(apogeeAltitudeElement.value.replaceAll(',', ''));
-    if (isNaN(rocketApogee)) {
-        window.alert(`Apogee is not a valid number: ${rocketApogee}.`);
+    const apogeeAltitude = parseInt(apogeeAltitudeElement.value.replaceAll(',', ''));
+    if (isNaN(apogeeAltitude)) {
+        window.alert(`Apogee is not a valid number: ${apogeeAltitude}.`);
         return simulationList;
     }
-    if (rocketApogee <= 0) {
-        window.alert(`Apogee is not a valid height above ground: ${rocketApogee}.`);
+    if (apogeeAltitude <= 0) {
+        window.alert(`Apogee is not a valid height above ground: ${apogeeAltitude}.`);
     }
 
     let weathercockData = [];
@@ -1457,8 +1486,8 @@ async function requestOpenMeteoWind() {
             usingDualDeployoment = false;
         }
 
-        if (mainDeployAltitude > rocketApogee) {
-            window.alert(`Defaulting to single deployment since second deployment ${mainDeployAltitude} is higher than apogee ${rocketApogee}`);
+        if (mainDeployAltitude > apogeeAltitude) {
+            window.alert(`Defaulting to single deployment since second deployment ${mainDeployAltitude} is higher than apogee ${apogeeAltitude}`);
             usingDualDeployoment = false;
         } else if (0 == mainDeployAltitude) {
             window.alert(`Defaulting to single deployment since second deployment is set at ground level.`);
@@ -1475,192 +1504,41 @@ async function requestOpenMeteoWind() {
         }
     }
 
-    for (let forecastIndex = 0; forecastIndex < windForecastList.length; ++forecastIndex) {
-        const windForecast = windForecastList[forecastIndex];
+    // Identify what type of rocket will be launched.
+    if (applyWeathercockAdjustment) {
+        // NOTE - Need to implement a RocketWeathercock class before this data can be utilized properly
+        rocketDetails = new RocketApogee(apogeeAltitude);
+    } else {
+        rocketDetails = new RocketApogee(apogeeAltitude);
+    }
+
+    // Update the rocket's recovery system.
+    if (usingDualDeployoment) {
+        rocketDetails.setDualDeployment(drogueDecentRate, mainDeployAltitude, mainDescentRate);
+    } else {
+        rocketDetails.setSingleDeployment(mainDescentRate);
+    }
+
+    let forecastHour = new Date(launchTimes.launchDate);
+
+    windForecastList.forEach((windForecast) => {
         if (null == windForecast || 0 == windForecast.length) {
             console.debug('Failed to obtain a wind forecast.');
-            continue;
+            simulationList.push(null);
+        } else {
+            const launchSimulation = driftSimulation(launchLocationDetails,
+                forecastHour,
+                rocketDetails,
+                windForecast
+            );
+
+            // Add this completed simulation to the list
+            simulationList.push(launchSimulation);
+
+            // Move the launch time forward one hour
+            forecastHour.setTime(forecastHour.getTime() + 3600000);
         }
-
-        // Default apogee location to the launch site assuming no weathercocking
-        let rocketLocation = launchLocation.getCopy();
-
-        // Grab the most accurate launch site elevation currently available
-        let launchSiteElevation = parseInt(launchSiteElevationElement.value);
-        if (isNaN(launchSiteElevation) || launchSiteElevation < 0) {
-            launchSiteElevation = windForecast.groundElevation;
-        }
-
-        ////////////////////////////////////////////////////////////////////////////////
-        // TO-DO: I'm really confused about the wind averaging logic used here.  Not
-        //        sure why it is set to a limited range of array entries rather than
-        //        iterating up to the anticipated apogee.
-        ////////////////////////////////////////////////////////////////////////////////
-        let groundWindDirection = 0.0;
-        let groundWindSpeed = 0.0;
-
-        // Defaulting to one for Open-Meteo model
-        let altitudeCount = 1;
-        if ('RAP' == windForecast.model) {
-            if (rocketApogee <= 1000) {
-                altitudeCount = 2;
-            } else {
-                altitudeCount = 4;
-            }
-        }
-
-        if (altitudeCount >= windForecast.windData.length) {
-            console.debug(`Weathercocking expected ${altitudeCount} entries but only found ${windForecast.windData.length}.`);
-            altitudeCount = windForecast.windData.length;
-        }
-
-        for (let windIndex = 0; windIndex < altitudeCount; ++windIndex) {
-            groundWindDirection += windForecast.windData[windIndex].windDirection;
-            groundWindSpeed += windForecast.windData[windIndex].windSpeed;
-        }
-
-        // Average the wind direction
-        groundWindDirection = groundWindDirection / altitudeCount;
-
-        // Average the wind speeds and convert to MPH to compare with user supplied values
-        groundWindSpeed = Math.round((groundWindSpeed / altitudeCount) * 1.15078);
-
-        ////////////////////////////////////////////////////////////////////////////////
-        // TO-DO: The original GPS DriftCast presents this value to the user. We do not
-        //        have anywhere to put it right now. Might be useful information.
-        ////////////////////////////////////////////////////////////////////////////////
-        //averageSurfaceWindDir = averageWeathercockDirection
-        
-        ////////////////////////////////////////////////////////////////////////////////
-        // TO-DO: Also need to add some sort of warning indicator when predicted wind
-        //        speed at ground level exceeds safetly limits.
-        ////////////////////////////////////////////////////////////////////////////////
-
-        let rocketAltitude = rocketApogee;
-        if (applyWeathercockAdjustment) {
-            // Adjust our apogee location according to the provided weathercocking data
-            rocketAltitude = weathercockAdjustment(rocketLocation, groundWindDirection, groundWindSpeed, weathercockData);
-            
-            // Default to the user supplied apogee if not obtained from weathercock data
-            if (rocketAltitude <= 0) {
-                rocketAltitude = rocketApogee;
-            }
-        }
-
-        ////////////////////////////////////////////////////////////////////////////////
-        // Drifting calulations begin.
-        ////////////////////////////////////////////////////////////////////////////////
-
-        // Identify the altitude range the rocket's apogee fits within
-        let windIndex = 1;
-        for (; windIndex < windForecast.windData.length; ++windIndex) {
-            if (windForecast.windData[windIndex].altitude >= rocketAltitude) {
-                break;
-            }
-        }
-
-        if (windForecast.windData.length == windIndex) {
-            console.debug(`Failed to find a match for altitude ${rocketAltitude} within the ${windIndex} forecast entries.`);
-            continue;
-        }
-
-        // All following logic assumes our index refers to the current wind band's floor
-        --windIndex;
-
-        // Initialize the descent rate depending on whether dual deployment mode is enabled
-        let currentDescentRate = usingDualDeployoment ? drogueDecentRate : mainDescentRate;
-
-        // Create a list describing each step of the rocket's descent.
-        const descentList = [];
-
-        // Start with apogee
-        let windBandPercentage = getWindBandPercentage(rocketAltitude, windForecast.windData, windIndex);
-        let windSpeed = getAverageWindSpeed(windBandPercentage, windForecast.windData, windIndex);
-        let windDirection = getAverageWindDirection(windBandPercentage, windForecast.windData, windIndex);
-        descentList.push(new DescentData(rocketAltitude, currentDescentRate, windSpeed, windDirection));
-        
-        // Now iterate backward through wind bands adding to our descent list for each
-        for (; windIndex >= 0; --windIndex) {
-            // Should never encounter inverted altitudes
-            let descentDistance = windForecast.windData[windIndex + 1].altitude - windForecast.windData[windIndex].altitude;
-            if (descentDistance <= 0) {
-                console.debug(`Altitude ${windForecast.windData[windIndex].altitude} is not less than ${windForecast.windData[windIndex + 1].altitude}.`);
-                rocketAltitude = windForecast.windData[windIndex].altitude;
-                continue;
-            }
-
-            // Check if a second deployment should occur
-            if (windForecast.windData[windIndex].altitude == mainDeployAltitude) {
-                // Replacing the wind band's definition with main parachute deployment
-                descentList.push(new DescentData(   mainDeployAltitude,
-                                                    mainDescentRate,
-                                                    windForecast.windData[windIndex].windSpeed,
-                                                    windForecast.windData[windIndex].windDirection));
-                currentDescentRate = mainDescentRate;
-                continue;
-            } else if (windForecast.windData[windIndex].altitude < mainDeployAltitude && windForecast.windData[windIndex + 1].altitude > mainDeployAltitude) {
-                // Linearly interpolate wind values from this band
-                windBandPercentage = getWindBandPercentage(mainDeployAltitude, windForecast.windData, windIndex);
-                windSpeed = getAverageWindSpeed(windBandPercentage, windForecast.windData, windIndex);
-                windDirection = getAverageWindDirection(windBandPercentage, windForecast.windData, windIndex);
-                descentList.push(new DescentData(mainDeployAltitude, mainDescentRate, windSpeed, windDirection));
-                currentDescentRate = mainDescentRate;
-            }
-
-            descentList.push(new DescentData(   windForecast.windData[windIndex].altitude,
-                                                currentDescentRate,
-                                                windForecast.windData[windIndex].windSpeed,
-                                                windForecast.windData[windIndex].windDirection));
-        }
-
-        if (descentList.length < 2) {
-            // No need to continue if no descent data was generated
-            console.debug(`List of descent data is too short.  ${descentList.length}`);
-            continue;
-        }
-
-        // Reset our descent rate to the apogee's value
-        currentDescentRate = descentList[0].descentRate;
-
-        // Create an object to hold this simulation's results now that we have some data
-        const launchSimulation = new LaunchSimulationData(launchSiteElevation,
-                                                    launchTimes.launchDate.getHours() + forecastIndex,
-                                                    groundWindSpeed,
-                                                    groundWindDirection,
-                                                    'RAP' == windForecast.model);
-
-        // Begin by adding the launch site and apogee
-        launchSimulation.addLaunchPathPoint(0, launchLocation);
-        launchSimulation.addLaunchPathPoint(rocketAltitude, rocketLocation);
-
-        for (let x = 1; x < descentList.length; ++x) {
-            // Get the average wind conditions between this and the previous altitude
-            windSpeed = (descentList[x].windSpeed + descentList[x - 1].windSpeed) / 2.0;
-            let descentDistance = descentList[x - 1].altitude - descentList[x].altitude;
-
-            windDirection = descentList[x].windDirection + descentList[x - 1].windDirection;
-            if (Math.abs(descentList[x - 1].windDirection - descentList[x].windDirection) < 180.0) {
-                windDirection /= 2.0;;
-            } else {
-                // Ensure the average remains in a northerly direction
-                windDirection = (windDirection - 360.0) / 2.0;
-                if (windDirection < 0.0) {
-                    windDirection += 360.0;
-                }
-            }
-    
-            driftWithWind(rocketLocation, windSpeed, windDirection, currentDescentRate, descentDistance);
-
-            // Add this to our simulation data before continuing the decent
-            launchSimulation.addLaunchPathPoint(descentList[x].altitude, rocketLocation);
-
-            // Update the descent rate with this altitude's value
-            currentDescentRate = descentList[x].descentRate;
-        }
-
-        // Add this completed simulation to the list
-        simulationList.push(launchSimulation);
-    }
+    });
 
     return simulationList;
 }
@@ -1909,7 +1787,7 @@ async function calculateLandingPlots() {
                                                     launchTimes.launchDate.getHours() + currentOffset - launchTimes.startHourOffset,
                                                     groundWindSpeed,
                                                     groundWindDirection,
-                                                    'RAP' == windForecast.model);
+                                                    windForecast.model);
 
         // Begin by adding the launch site and apogee
         launchSimulation.addLaunchPathPoint(0, launchLocation);
