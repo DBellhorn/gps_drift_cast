@@ -1,4 +1,4 @@
-import { GeoLocation, feetToMeters, metersToFeet, moveAlongBearing, distanceBetweenLocations } from "./geo.js";
+import { GeoLocation, feetToMeters, metersToFeet, moveAlongBearing, distanceBetweenLocations, bearingBetweenLocations } from "./geo.js";
 import { saveLandingScatter, saveFlightScatter, saveGroundPaths } from "./kml.js";
 import { LaunchTimeData, LaunchSimulationData, DescentData, LaunchLocationData } from "./launch.js";
 import { WeathercockWindData } from "./wind.js";
@@ -678,17 +678,17 @@ function updateDriftResultTable(launchList) {
                 windSpeedCell.style.background = '#ff0000';
                 break;
         }
-        windSpeedCell.appendChild(document.createTextNode(`${groundWindSpeed}`));
+        windSpeedCell.appendChild(document.createTextNode(`${groundWindSpeed} MPH`));
         row.appendChild(windSpeedCell);
 
         // Average wind direction at ground level.
         const windDirectionCell = document.createElement('td');
-        windDirectionCell.appendChild(document.createTextNode(`${Math.round(launchList[i].groundWindDirection)}`));
+        windDirectionCell.appendChild(document.createTextNode(`${Math.round(launchList[i].groundWindDirection)}°`));
         row.appendChild(windDirectionCell);
 
         // Apogee of the rocket.
         const apogeeCell = document.createElement('td');
-        apogeeCell.appendChild(document.createTextNode(`${launchList[i].getApogee()}`));
+        apogeeCell.appendChild(document.createTextNode(`${launchList[i].getApogee()} ft`));
         row.appendChild(apogeeCell);
 
         // Distance the rocket weathercocked.
@@ -699,18 +699,25 @@ function updateDriftResultTable(launchList) {
         if (null != launchPosition && null != apogeePosition) {
             weathercockDist = Math.round(metersToFeet(distanceBetweenLocations(launchPosition, apogeePosition)));
         }
-        weathercockDistanceCell.appendChild(document.createTextNode(`${weathercockDist}`));
+        weathercockDistanceCell.appendChild(document.createTextNode(`${weathercockDist} ft`));
         row.appendChild(weathercockDistanceCell);
 
         // Distance from the launch pad to where the rocket landed.
         const driftDistanceCell = document.createElement('td');
         const landingPosition = launchList[i].getLandingLocation();
         let driftDist = 0;
+        let driftBearing = NaN;
         if (null != launchPosition && null != landingPosition) {
             driftDist = Math.round(metersToFeet(distanceBetweenLocations(launchPosition, landingPosition)));
+            driftBearing = bearingBetweenLocations(launchPosition, landingPosition);
         }
-        driftDistanceCell.appendChild(document.createTextNode(`${driftDist}`));
+        driftDistanceCell.appendChild(document.createTextNode(`${driftDist} ft`));
         row.appendChild(driftDistanceCell);
+
+        // Bearing from the launch pad to where the rocket landed.
+        const driftBearingCell = document.createElement('td');
+        driftBearingCell.appendChild(document.createTextNode(`${Math.round(driftBearing)}°`));
+        row.appendChild(driftBearingCell);
 
         driftResultBody.appendChild(row);
     }
