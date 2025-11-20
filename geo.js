@@ -1,5 +1,3 @@
-
-
 /* Stores the latitude and longitude defining a geograpical location. */
 class GeoLocation {
     /**
@@ -167,5 +165,35 @@ function distanceBetweenLocations(locationA, locationB) {
     return c * 6371000.0;
 }
 
+/**
+ * Calculates the bearing (degrees from North) between two GeoLocations.
+ * @param {GeoLocation} locationA - First location.
+ * @param {GeoLocation} locationB - Second location.
+ * @returns {number} - Bearing (degrees from North) from locationA toward locationB. NaN if both locations are identical.
+ */
+function bearingBetweenLocations(locationA, locationB) {
+    if (locationA.latitude === locationB.latitude && locationB.longitude === locationB.longitude) {
+        return NaN;
+    }
+    // Convert the coordinate components from degrees to radians
+    const latitudeA = degreesToRadians(locationA.latitude);
+    const latitudeB = degreesToRadians(locationB.latitude);
+    const longitudeDelta = degreesToRadians(locationB.longitude - locationA.longitude);
+
+    const x = Math.cos(latitudeA) * Math.sin(latitudeB) - Math.sin(latitudeA) * Math.cos(latitudeB) * Math.cos(longitudeDelta);
+    const y = Math.sin(longitudeDelta) * Math.cos(latitudeB);
+    const θ = Math.atan2(y, x);
+
+    const bearing = radiansToDegrees(Math.atan2(y, x));
+
+    // Ensure the resulting bearing is within the expected 0 -> 360 degree range.
+    if (bearing < 0) {
+        return bearing + 360;
+    } else if (bearing > 360) {
+        return brearing - 360;
+    }
+    return bearing;
+}
+
 export { GeoLocation };
-export { feetToMeters, metersToFeet, moveAlongBearing, moveAlongBearingKilometers, distanceBetweenLocations };
+export { feetToMeters, metersToFeet, moveAlongBearing, moveAlongBearingKilometers, distanceBetweenLocations, bearingBetweenLocations };
