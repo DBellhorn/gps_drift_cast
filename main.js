@@ -79,7 +79,6 @@ var currentLaunchSiteStatus = LaunchSiteStatus.NOSAVES;
 
 // Values used to limit forecast requests
 const secondsInDay = 86400000;
-const maxDaysPreviousOpenMeteo = 9;
 const maxDaysFutureOpenMeteo = 15;
 
 /**
@@ -735,7 +734,7 @@ function updateDriftResultTable(launchList) {
  */
 window.onload = () => {
     // Print a version into the log to help keep track between iterations.
-    console.log('GPS DriftCast 1.2');
+    console.log('GPS DriftCast 1.2a');
 
     const currentDate = new Date();
 
@@ -756,12 +755,6 @@ window.onload = () => {
 
     // Initialize the date element to today
     launchDateElement.value = `${currentDate.getFullYear()}-${monthString}-${dayString}`;
-
-    // Prevent the user from selecting a date too far in the past
-    let oldestDate = new Date();
-    oldestDate.setTime(oldestDate.getTime() - (maxDaysPreviousOpenMeteo * secondsInDay));
-
-    launchDateElement.min = `${oldestDate.getFullYear()}-${(oldestDate.getMonth() + 1).toString().padStart(2, '0')}-${oldestDate.getDate().toString().padStart(2, '0')}`;
 
     // Prevent the user from selecting a date too far into the future
     const maxDate = new Date();
@@ -1045,8 +1038,9 @@ window.onload = () => {
         today = new Date(today.getFullYear(), today.getMonth(), today.getDate());
 
         let deltaDays = (launchDay - today) / secondsInDay;
-        if (deltaDays < (-1 * maxDaysPreviousOpenMeteo)) {
-            console.debug('Too far in the past.');
+        console.log(`Requesting ${deltaDays} in the past.`);
+        if (numYear < 2022) {
+            console.debug('Weather history before 2022 is not available.');
         } else if (deltaDays > maxDaysFutureOpenMeteo) {
             console.debug('Too far in the future.');
         }
@@ -1420,8 +1414,8 @@ async function requestOpenMeteoWind() {
         window.alert('The launch cannot end before it starts.');
         return simulationList;
     }
-    if (launchTimes.startHourOffset < (-24 * maxDaysPreviousOpenMeteo)) {
-        window.alert(`Wind speeds older than ${maxDaysPreviousOpenMeteo} days are not available.`);
+    if (launchTimes.launchDate.getFullYear() < 2022) {
+        window.alert('Weather records are not available before 2022.');
         return simulationList;
     }
     if (launchTimes.endHourOffset > (24 * maxDaysFutureOpenMeteo)) {

@@ -317,8 +317,15 @@ async function getOpenMeteoWindPredictionData(launchLocation, launchTimes) {
     let windForecastList = [];
 
     // Begin forming a request for Open-Meteo's API with the launch location.
-    let fetchRequest = `https://api.open-meteo.com/v1/forecast?latitude=${launchLocation.latitude}&longitude=${launchLocation.longitude}`;
-    //let fetchRequest = `https://api.open-meteo.com/v1/forecast?latitude=${launchLocation.latitude}&longitude=${launchLocation.longitude}&models=ecmwf_ifs025`;
+    let fetchRequest = 'https://';
+
+    // Check if the launch occured more than a week in the past (7 x 24 = 168 hours)
+    if (launchTimes.startHourOffset < -168) {
+        fetchRequest += 'historical-forecast-';
+    }
+
+    fetchRequest += `api.open-meteo.com/v1/forecast?latitude=${launchLocation.latitude}&longitude=${launchLocation.longitude}`;
+    //fetchRequest += `api.open-meteo.com/v1/forecast?latitude=${launchLocation.latitude}&longitude=${launchLocation.longitude}&models=ecmwf_ifs025`;
 
     // Specify the launch's active hours.
     fetchRequest += `&start_hour=${launchTimes.getStartTimeAsISOString()}&end_hour=${launchTimes.getEndTimeAsISOString()}`;
@@ -364,7 +371,10 @@ async function getOpenMeteoWindPredictionData(launchLocation, launchTimes) {
     }
 
     // In case the generated URL is required to download separate data for further debugging
-    //console.log(fetchRequest);
+    // console.log(fetchRequest);
+    // if (fetchRequest.length() > 0) {
+    //     return windForecastList;
+    // }
     
     try {
         const openMeteoPromise = await fetch(fetchRequest);
