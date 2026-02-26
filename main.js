@@ -6,7 +6,7 @@ import { getWindPredictionData, getOpenMeteoWindPredictionData, getWindBandPerce
 import { getHourColor } from "./map_colors.js";
 
 import { driftSimulation } from './drift_simulation.js';
-import { RocketBase, RocketApogee } from './rocket.js';
+import { RocketBase, RocketApogee, RocketWeathercocking } from './rocket.js';
 
 const googleMapApiKey = 'YOUR_API_KEY';
 
@@ -734,7 +734,7 @@ function updateDriftResultTable(launchList) {
  */
 window.onload = () => {
     // Print a version into the log to help keep track between iterations.
-    console.log('GPS DriftCast 1.2a');
+    console.log('GPS DriftCast 1.2b');
 
     const currentDate = new Date();
 
@@ -1507,8 +1507,7 @@ async function requestOpenMeteoWind() {
 
     // Identify what type of rocket will be launched.
     if (applyWeathercockAdjustment) {
-        // NOTE - Need to implement a RocketWeathercock class before this data can be utilized properly
-        rocketDetails = new RocketApogee(apogeeAltitude);
+        rocketDetails = new RocketWeathercocking(apogeeAltitude, weathercockData);
     } else {
         rocketDetails = new RocketApogee(apogeeAltitude);
     }
