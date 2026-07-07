@@ -258,6 +258,237 @@ class WeathercockWindData {
     }
 }
 
+/* Stores atmospheric conditions and calculates how they affect drift. */
+class AtmosphericDrift {
+    /**
+     * List of atmospheric conditions at increasing altitudes.
+     * @private
+     * @type {Array.<WindAtAltitude>}
+     */
+    #atmosphericConditions = [];
+
+    /**
+     * The highest altitude for which atmospheric conditions are known.
+     * @private
+     * @type {number}
+     */
+    #maxAltitude = 0.0;
+
+    /**
+     * Initializes the atmospheric model based on the provided forecast data.
+     * @param {WindForecastData} forecastData - The source weather forecast data.
+     */
+    constructor(forecastData) {
+        if (null == forecastData || 0 == forecastData.length) {
+            console.debug('Failed to create an atmospheric model due to invalid forecast data.');
+            return;
+        }
+
+        // Cubic spline interpolation requires adjacent points, so create an extra below ground level.
+        this.#atmosphericConditions.push(new WindAtAltitude(-32.8, forecastData.windData[0].windSpeed, forecastData.windData[0].windDirection));
+
+        // Create copies of all altitude objects for internal storage.
+        forecastData.windData.forEach((altData) => {
+            this.#atmosphericConditions.push(new WindAtAltitude(altData.altitude, altData.windSpeed, altData.windDirection));
+        });
+
+        // Copy the final entry to better support cubic spline interpolation.
+        if (forecastData.windData.length > 1) {
+            const finalData = forecastData.windData.at(-1);
+            const previousData = forecastData.windData.at(-2);
+            this.#maxAltitude = finalData.altitude;
+
+            const fakeAltitude = this.#maxAltitude - previousData.altitude + this.#maxAltitude;
+            this.#atmosphericConditions.push(new WindAtAltitude(this.#maxAltitude - previousData.altitude + this.#maxAltitude, finalData.windSpeed, finalData.windDirection));
+        }
+    }
+
+    /**
+     * Interpolates a value between p1 and p2 at the relative position using a cubic spline.
+     * @param {number} p0 - The first data point.
+     * @param {number} p1 - The second data point.
+     * @param {number} p2 - The third data point.
+     * @param {number} p3 - The fourth data point.
+     * @param {number} position - Distance between p1 and p2 to interpolate a value.
+     * @returns {number} - The interpolated value.
+     */
+    #cubicInterpolate(p0, p1, p2, p3, position) {
+        return p1 + 0.5 * position * (p2 - p0 + position * (2.0 * p0 - 5.0 * p1 + 4.0 * p2 - p3 + position * (3.0 * (p1 - p2) + p3 - p0)));
+    }
+
+    /**
+     * Interpolate the wind speed within an altitude band defined by using the provided index
+     * as the upper bound. Cubic spline interpolation requires neighboring data to be valid.
+     * @param {number} upperBound - Index identifying the upper bound of the band containing the target altitude.
+     * @param {number} position - Distance between the upper and lower bounds to interpolate a speed.
+     * @returns {number} - The interpolated wind speed.
+     */
+    #interpolateWindSpeed(upperBound, position) {
+        // Quick validation just to be safe.
+        if (upperBound < 2 || upperBound > (this.#atmosphericConditions.length - 1)) {
+            console.debug(`Attempted to interpolate wind speed with an invalid altitude index ${upperBound}`);
+
+            if (upperBound < this.#atmosphericConditions.length) {
+                return this.#atmosphericConditions[upperBound].windSpeed;
+            } else {
+                return 0.0;
+            }
+        } else if (position < 0.0 || position > 1.0) {
+            console.debug(`Attempted to interpolate wind speed with an invalid position ${position}`);
+
+            if (upperBound < this.#atmosphericConditions.length) {
+                return this.#atmosphericConditions[upperBound].windSpeed;
+            } else {
+                return 0.0;
+            }
+        }
+
+        return this.#cubicInterpolate(
+            this.#atmosphericConditions[upperBound - 2].windSpeed,
+            this.#atmosphericConditions[upperBound - 1].windSpeed,
+            this.#atmosphericConditions[upperBound].windSpeed,
+            this.#atmosphericConditions[upperBound + 1].windSpeed,
+            position
+        );
+    }
+
+    /**
+     * Interpolate the wind direction within an altitude band defined by using the provided index
+     * as the upper bound. Cubic spline interpolation requires neighboring data to be valid.
+     * @param {number} upperBound - Index identifying the upper bound of the band containing the target altitude.
+     * @param {number} position - Distance between the upper and lower bounds to interpolate a direction.
+     * @returns {number} - The interpolated wind direction.
+     */
+    #interpolateWindDirection(upperBound, position) {
+        // Quick validation just to be safe.
+        if (upperBound < 2 || upperBound > (this.#atmosphericConditions.length - 1)) {
+            console.debug(`Attempted to interpolate wind direction with an invalid altitude index ${upperBound}`);
+
+            if (upperBound < this.#atmosphericConditions.length) {
+                return this.#atmosphericConditions[upperBound].windDirection;
+            } else {
+                return 0.0;
+            }
+        } else if (position < 0.0 || position > 1.0) {
+            console.debug(`Attempted to interpolate wind direction with an invalid position ${position}`);
+
+            if (upperBound < this.#atmosphericConditions.length) {
+                return this.#atmosphericConditions[upperBound].windDirection;
+            } else {
+                return 0.0;
+            }
+        }
+
+        const windDirections = [
+            this.#atmosphericConditions[upperBound - 2].windDirection,
+            this.#atmosphericConditions[upperBound - 1].windDirection,
+            this.#atmosphericConditions[upperBound].windDirection,
+            this.#atmosphericConditions[upperBound + 1].windDirection,
+        ];
+
+        for (let x = 1; x < 4; ++x) {
+            if (Math.abs(windDirections[x] - windDirections[x - 1]) > 180.0) {
+                for (let x = 0; x < 4; ++x) {
+                    if (windDirections[x] > 180.0) {
+                        windDirections[x] -= 360.0;
+                    }
+                }
+                break;
+            }
+        }
+
+        let interpolatedWindDirection = this.#cubicInterpolate(
+            windDirections[0],
+            windDirections[1],
+            windDirections[2],
+            windDirections[3],
+            position
+        );
+
+        if (interpolatedWindDirection < 0.0) {
+            interpolatedWindDirection += 360.0;
+        }
+
+        return interpolatedWindDirection;
+    }
+
+    /**
+     * Calculates drift distance and applies it to the rocket's location. Returns descent distance.
+     * @param {number} altitude - Altitude (feet AGL) the rocket begins it's descent.
+     * @param {number} descentRate - Velocity (ft/s) the rocket is currently falling.
+     * @param {number} duration - Amount of time (seconds) to simulate drifting.
+     * @param {GeoLocation} rocketLocation - Initial location and to be updated as the destination.
+     * @returns {number} - Distance (feet) the rocket descended.
+     */
+    descendAndDrift(altitude, descentRate, duration, rocketLocation) {
+        if (isNaN(altitude) || altitude <= 0.0) {
+            console.debug(`Attempting to simulate decending and drifting from an invalid altiude ${altitude}`)
+            return altitude;
+        } else if (isNaN(descentRate)) {
+            console.debug(`Cannot use the provided descent rate: ${descentRate}`);
+            return altitude;
+        } else if (altitude > this.#maxAltitude) {
+            console.debug(`Attempting to simulate decending and drift from an altiude ${altitude} ft above our max ${this.#maxAltitude} ft`);
+            return descentRate * duration;
+        }
+
+        let windSpeed = -1.0;
+        let windDirection = -1.0;
+        let adjustedDescentRate = Math.abs(descentRate);
+
+        // Identify an altitude band containing the target altitude with adjacent data
+        // since cubic spline interpolation requires four data points.
+        for (let index = 2; index < (this.#atmosphericConditions.length - 1); ++index) {
+            if (this.#atmosphericConditions[index].altitude === altitude) {
+                windSpeed = this.#atmosphericConditions[index].windSpeed;
+                windDirection = this.#atmosphericConditions[index].windDirection;
+                break;
+            } else if (this.#atmosphericConditions[index].altitude > altitude) {
+                // Utilize the ratio between altitudes as the interpolation distance.
+                const lowerAltitude = this.#atmosphericConditions[index - 1].altitude;
+                const upperAltitude = this.#atmosphericConditions[index].altitude;
+                const altitudeRatio = (altitude - lowerAltitude) / (upperAltitude - lowerAltitude);
+
+                windSpeed = this.#interpolateWindSpeed(index, altitudeRatio);
+                windDirection = this.#interpolateWindDirection(index, altitudeRatio);
+                break;
+            }
+        }
+
+        if (windSpeed < 0.0 || windDirection < 0.0 ) {
+            console.debug(`Failed to identify a valid altitude band containing the target ${altitude} ft`);
+            return descentRate * duration;
+        }
+
+        let adjustedDuration = duration;
+        let descentDistance = adjustedDescentRate * duration;
+        if (descentDistance > altitude) {
+            // Stop descent at ground level.
+            descentDistance = altitude;
+
+            // Adjust duration to match the reduced descent distance.
+            adjustedDuration = adjustedDescentRate / descentDistance;
+        }
+
+        // The movement function expects a distance in meters, so convert the wind speed
+        // from knots into ft/s before multiplying by the duration.
+        const driftDistance = adjustedDuration * (windSpeed * 1.68781);
+
+        // Wind bearing indicates where the wind is blowing from, but we want to drift
+        // downwind here.  Therefore the direction is inverted before applying movement.
+        if (windDirection < 180) {
+            windDirection += 180;
+        } else {
+            windDirection -= 180;
+        }
+
+        // Now a decent position can be calculated
+        moveAlongBearingKilometers(rocketLocation, feetToMeters(driftDistance), windDirection);
+
+        return descentDistance;
+    }
+}
+
 /**
  * Requests wind forecast data from WindsAloft server to be provided as a JSON object.
  * @param {GeoLocation} launchLocation - Coordinates of the launch location.
@@ -644,7 +875,7 @@ function driftWithWind(rocketLocation, windSpeed, windDirection, decentRate, des
 }
 
 // Export our class definitions
-export { WindAtAltitude, WindForecastData, WeathercockWindData };
+export { WindAtAltitude, WindForecastData, WeathercockWindData, AtmosphericDrift };
 
 // Export our functions
 export { getWindPredictionData, getOpenMeteoWindPredictionData, getWindBandPercentage, getAverageWindSpeed, getAverageWindDirection, driftWithWind };
