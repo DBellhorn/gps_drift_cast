@@ -2,112 +2,473 @@ import { GeoLocation, feetToMeters, moveAlongBearing } from "./geo.js";
 import { LaunchSimulationData } from "./launch.js";
 import { getHourColor } from "./map_colors.js";
 
+const styleName = 'Style';
+const iconStyleName = 'IconStyle';
+const colorName = 'color';
+const coordinatesName = 'coordinates';
+const scaleName = 'scale';
+const altitudeModeName = 'altitudeMode';
+const clampToGroundName = 'clampToGround';
+const relativeToGroundName = 'relativeToGround';
+const placemarkName = 'Placemark';
+
 /**
- * Create a KML placemarker and append it to the provided string array.
- * @param {Array.<string>} stringArray - String array the placemarker will be appended onto.
- * @param {string} markerLabel - Text to be displayed in association with the placemarker.
- * @param {string} markerColor - Hexadecimal number string identifying the desired color.
- * @param {GeoLocation} markerLocation - Coordinates where this placemarker will appear in Google Earth.
+ * Create a KML Element containing the name associated with the parent Element
+ * @param {XMLDocument} kmlDoc - Parent Document to which this Element will be appended
+ * @param {string} name - Name to be assigned to the Element
+ * @returns {Element}
  */
-function addPlacemark(stringArray, markerLabel, markerColor, markerLocation) {
-    stringArray.push(`    <Placemark>\n`);
-    stringArray.push(`      <name>${markerLabel}</name>\n`);
-    stringArray.push(`      <StyleMap>\n`);
-    stringArray.push(`        <Pair>\n`);
-    stringArray.push(`          <key>normal</key>\n`);
-    stringArray.push(`          <Style>\n`);
-    stringArray.push(`            <IconStyle>\n`);
-    stringArray.push(`              <scale>0.75</scale>\n`);
-    stringArray.push(`              <Icon>\n`);
-    stringArray.push(`                <href>https://earth.google.com/earth/document/icon?color=${markerColor}&amp;id=2000&amp;scale=4</href>\n`);
-    stringArray.push(`              </Icon>\n`);
-    stringArray.push(`              <hotSpot x="64" y="128" xunits="pixels" yunits="insetPixels"/>\n`);
-    stringArray.push(`            </IconStyle>\n`);
-    stringArray.push(`            <LabelStyle>\n`);
-    stringArray.push(`              <scale>0.75</scale>\n`);
-    stringArray.push(`            </LabelStyle>\n`);
-    stringArray.push(`          </Style>\n`);
-    stringArray.push(`        </Pair>\n`);
-    stringArray.push(`        <Pair>\n`);
-    stringArray.push(`          <key>highlight</key>\n`);
-    stringArray.push(`          <Style>\n`);
-    stringArray.push(`            <IconStyle>\n`);
-    stringArray.push(`              <scale>0.9</scale>\n`);
-    stringArray.push(`              <Icon>\n`);
-    stringArray.push(`                <href>https://earth.google.com/earth/document/icon?color=${markerColor}&amp;id=2000&amp;scale=4</href>\n`);
-    stringArray.push(`              </Icon>\n`);
-    stringArray.push(`              <hotSpot x="64" y="128" xunits="pixels" yunits="insetPixels"/>\n`);
-    stringArray.push(`            </IconStyle>\n`);
-    stringArray.push(`            <LabelStyle>\n`);
-    stringArray.push(`              <scale>0.75</scale>\n`);
-    stringArray.push(`            </LabelStyle>\n`);
-    stringArray.push(`          </Style>\n`);
-    stringArray.push(`        </Pair>\n`);
-    stringArray.push(`      </StyleMap>\n`);
-    stringArray.push(`      <Point>\n`);
-    stringArray.push(`        <altitudeMode>clampToGround</altitudeMode>\n`);
-    stringArray.push(`        <coordinates>${markerLocation.longitude},${markerLocation.latitude},0</coordinates>\n`);
-    stringArray.push(`      </Point>\n`);
-    stringArray.push(`    </Placemark>\n`);
+function createKmlName(kmlDoc, name) {
+    const nameElem = kmlDoc.createElement('name');
+    nameElem.innerHTML = name;
+    return nameElem;
 }
 
 /**
- * Create a circle and append it to the provided string array.
- * @param {Array.<string>} stringArray - String array the placemarker will be appended onto.
- * @param {string} circleLabel - Text to be displayed in association with the placemarker.
- * @param {string} lineColor - Hexadecimal color code for the circle's perimeter.
- * @param {string} fillColor - Hexadecimal color code for the circle's interior.
+ * Create a KML Element defining the style used to draw a line
+ * @param {XMLDocument} kmlDoc - Parent Document to which this Element will be appended
+ * @param {string} color - Color to be used when drawing the associated line
+ * @param {number} width - Identifies how wide the associated line should be drawn
+ * @returns {Element}
+ */
+function createKmlLineStyle(kmlDoc, color, width) {
+    const lineStyleElem = kmlDoc.createElement('LineStyle');
+    const lineColorElem = kmlDoc.createElement(colorName);
+    lineColorElem.innerHTML = color;
+    lineStyleElem.appendChild(lineColorElem);
+
+    const lineWidthElem = kmlDoc.createElement('width');
+    lineWidthElem.innerHTML = `${width}`;
+    lineStyleElem.appendChild(lineWidthElem);
+
+    return lineStyleElem;
+}
+
+/**
+ * Create a KML Element defining the style used to draw a polygon
+ * @param {XMLDocument} kmlDoc - Parent Document to which this Element will be appended
+ * @param {string} color - Color to be used when drawing the associated polygon
+ * @returns {Element}
+ */
+function createKmlPolyStyle(kmlDoc, color) {
+    const styleElem = kmlDoc.createElement('PolyStyle');
+    const colorElem = kmlDoc.createElement(colorName);
+    colorElem.innerHTML = color;
+    styleElem.appendChild(colorElem);
+    return styleElem;
+}
+
+/**
+ * Create a KML Element defining the style used to draw a shape
+ * @param {XMLDocument} kmlDoc - Parent Document to which this Element will be appended
+ * @param {string} outlineColor - Color to be used when drawing the associated shape's outline
+ * @param {string} fillColor - Color to be used when drawing the associated shape's fill
+ * @returns {Element}
+ */
+function createKmlShapeStyle(kmlDoc, outlineColor, fillColor) {
+    const styleElem = kmlDoc.createElement(styleName);
+    styleElem.appendChild(createKmlLineStyle(kmlDoc, outlineColor, 2));
+    styleElem.appendChild(createKmlPolyStyle(kmlDoc, fillColor));
+    return styleElem;
+}
+
+/**
+ * Create a KML Element containing a list of space separated geo-coordinates
+ * @param {XMLDocument} kmlDoc - Parent Document to which this Element will be appended
+ * @param {Array.<GeoLocation>} coordinates - List of coordinates the Element will contain
+ * @returns {Element}
+ */
+function createKmlCoordinates(kmlDoc, coordinates) {
+    const coordinatesElem = kmlDoc.createElement(coordinatesName);
+    coordinates.forEach((coord) => coordinatesElem.innerHTML += `${coord.longitude},${coord.latitude},0 `);
+    return coordinatesElem;
+}
+
+/**
+ * Create a KML Element containing a list of space separated geo-coordinates
+ * @param {XMLDocument} kmlDoc - Parent Document to which this Element will be appended
+ * @param {Array.<LaunchPathPoint>} launchPath - List of points defining a flight path to be displayed
+ * @param {boolean} clampToGround - Indicates if the lines should be clamped to the ground
+ * @returns {Element}
+ */
+function createKmlLaunchPath(kmlDoc, launchPath, clampToGround) {
+    const coordinatesElem = kmlDoc.createElement(coordinatesName);
+    launchPath.forEach((pathPoint) => coordinatesElem.innerHTML += `${pathPoint.location.longitude},${pathPoint.location.latitude},${clampToGround ? 0 : feetToMeters(pathPoint.altitude)} `);
+    return coordinatesElem;
+}
+
+/**
+ * Create a KML Element defining a text label displayed without a marker icon
+ * @param {XMLDocument} kmlDoc - Parent Document to which this Element will be appended
+ * @param {string} name - Name to be assigned to the Element
+ * @param {GeoLocation} coordinate - The coordinates where this label should be placed
+ * @returns {Element}
+ */
+function createKmlLabel(kmlDoc, name, coordinate, agl = 0) {
+    const labelElem = kmlDoc.createElement(placemarkName);
+    labelElem.setAttribute('xsi:type', 'KmlLabel');
+    labelElem.appendChild(createKmlName(kmlDoc, name));
+
+    const styleElem = kmlDoc.createElement(styleName);
+    const iconStyleElem = kmlDoc.createElement(iconStyleName);
+    const iconScaleElem = kmlDoc.createElement(scaleName);
+    iconScaleElem.innerHTML = '0';
+    iconStyleElem.appendChild(iconScaleElem);
+    styleElem.appendChild(iconStyleElem);
+    labelElem.appendChild(styleElem);
+
+    const pointElem = kmlDoc.createElement('Point');
+    const altModeElem = kmlDoc.createElement(altitudeModeName);
+    altModeElem.innerHTML = (0 === agl) ? clampToGroundName : relativeToGroundName;
+    pointElem.appendChild(altModeElem);
+
+    const coordElem = kmlDoc.createElement(coordinatesName);
+    coordElem.innerHTML = `${coordinate.longitude},${coordinate.latitude},${agl}`;
+    pointElem.appendChild(coordElem);
+    labelElem.appendChild(pointElem);
+
+    return labelElem;
+}
+
+/**
+ * Create a KML Element defining the display style for a marker
+ * @param {XMLDocument} kmlDoc - Parent Document to which this Element will be appended
+ * @param {number} iconScale - Scale of the label's icon
+ * @param {number} labelScale - Scale of the label's text
+ * @param {string} color - Color to be used for displaying the marker's icon
+ * @returns 
+ */
+function createKmlMarkerStyle(kmlDoc, iconScale, labelScale, color) {
+    const styleElem = kmlDoc.createElement(styleName);
+    const iconStyleElem = kmlDoc.createElement(iconStyleName);
+    const iconStyleScaleElem = kmlDoc.createElement(scaleName);
+    iconStyleScaleElem.innerHTML = iconScale;
+    iconStyleElem.appendChild(iconStyleScaleElem);
+
+    const iconElem = kmlDoc.createElement('Icon');
+    const hrefElem = kmlDoc.createElement('href');
+    hrefElem.innerHTML = `https://earth.google.com/earth/document/icon?color=${color}&amp;id=2000&amp;scale=4`;
+    iconElem.appendChild(hrefElem);
+    iconStyleElem.appendChild(iconElem);
+
+    const hotSpotElem = kmlDoc.createElement('hotSpot');
+    hotSpotElem.setAttribute('x', '64');
+    hotSpotElem.setAttribute('y', '128');
+    hotSpotElem.setAttribute('xunits', 'pixels');
+    hotSpotElem.setAttribute('yunits', 'insetPixels');
+    iconStyleElem.appendChild(hotSpotElem);
+
+    const labelStyleElem = kmlDoc.createElement('labelStyle');
+    const labelStyleScaleElem = kmlDoc.createElement(scaleName);
+    labelStyleScaleElem.innerHTML = labelScale;
+    labelStyleElem.appendChild(labelStyleScaleElem);
+    iconStyleElem.appendChild(labelStyleElem);
+    styleElem.appendChild(iconStyleElem);
+    return styleElem;
+}
+
+/**
+ * Create a KML Element defining a marker with an icon and text which reacts to being highlighted
+ * @param {XMLDocument} kmlDoc - Parent Document to which this Element will be appended
+ * @param {string} name - Name to be assigned to the Element
+ * @param {string} color - The color to be used when drawing this marker's icon
+ * @param {GeoLocation} location - Coordinates identifying where this icon should be placed
+ * @returns 
+ */
+function createKmlMarker(kmlDoc, name, color, location) {
+    const placemarkElem = kmlDoc.createElement(placemarkName);
+    placemarkElem.appendChild(createKmlName(kmlDoc, name));
+
+    const styleMapElem = kmlDoc.createElement('StyleMap');
+    const normalPairElem = kmlDoc.createElement('Pair');
+    const normalKeyElem = kmlDoc.createElement('key');
+    normalKeyElem.innerHTML = 'normal';
+    normalPairElem.appendChild(normalKeyElem);
+    normalPairElem.appendChild(createKmlMarkerStyle(kmlDoc, 0.75, 0.75, color));
+    styleMapElem.appendChild(normalPairElem);
+
+    const highlightPairElem = kmlDoc.createElement('Pair');
+    const highlightKeyElem = kmlDoc.createElement('key');
+    highlightKeyElem.innerHTML = 'highlight';
+    highlightPairElem.appendChild(highlightKeyElem);
+    highlightPairElem.appendChild(createKmlMarkerStyle(kmlDoc, 0.9, 0.75, color));
+    styleMapElem.appendChild(highlightPairElem);
+    placemarkElem.appendChild(styleMapElem);
+
+    const pointElem = kmlDoc.createElement('Point');
+    const altitudeModeElem = kmlDoc.createElement(altitudeModeName);
+    altitudeModeElem.innerHTML = clampToGroundName;
+    pointElem.appendChild(altitudeModeElem);
+
+    const coordinatesElem = kmlDoc.createElement(coordinatesName);
+    coordinatesElem.innerHTML = `${location.longitude},${location.latitude},0`;
+    pointElem.appendChild(coordinatesElem);
+    placemarkElem.appendChild(pointElem);
+    return placemarkElem;
+}
+
+/**
+ * Create a KML Element defining a line displayed along the ground
+ * @param {XMLDocument} kmlDoc - Parent Document to which this Element will be appended
+ * @param {string} name - Name to be assigned to the Element
+ * @param {color} color - The color to be used when drawing this line
+ * @param {boolean} clampToGround - Indicates if the lines should be clamped to the ground
+ * @param {Array.<LaunchPathPoint>} flightPath - List of points defining the flight path to be drawn
+ * @returns {Element}
+ */
+function createKmlLine(kmlDoc, name, color, clampToGround, flightPath) {
+    const lineElem = kmlDoc.createElement(placemarkName);
+    lineElem.setAttribute('xsi:type', 'KmlLine');
+
+    lineElem.appendChild(createKmlName(kmlDoc, name));
+
+    const styleElem = kmlDoc.createElement(styleName);
+    styleElem.appendChild(createKmlLineStyle(kmlDoc, color, 1));
+    lineElem.appendChild(styleElem);
+
+    const lineStringElem = kmlDoc.createElement('LineString');
+    const altModeElem = kmlDoc.createElement(altitudeModeName);
+    altModeElem.innerHTML = clampToGround ? clampToGroundName : relativeToGroundName;
+    lineStringElem.appendChild(altModeElem);
+
+    const tessellateElem = kmlDoc.createElement('tessellate');
+    tessellateElem.innerHTML = '1';
+    lineStringElem.appendChild(tessellateElem);
+    lineStringElem.appendChild(createKmlLaunchPath(kmlDoc, flightPath, clampToGround));
+    lineElem.appendChild(lineStringElem);
+
+    return lineElem;
+}
+
+/**
+ * Create a KML Element which defines a polygon on the ground
+ * @param {XMLDocument} kmlDoc - The XMLDocument parent to which the element will be appended
+ * @param {Array.<GeoLocation>} coordinates - List of GeoLocations defining a convex polygon outline
+ * @returns {Element} Polygon Element that was created
+ */
+function createKmlPolygon(kmlDoc, coordinates) {
+    const polygonElem = kmlDoc.createElement('Polygon');
+
+    const extrudeElem = kmlDoc.createElement('extrude');
+    extrudeElem.innerHTML = 0;
+    polygonElem.appendChild(extrudeElem);
+
+    const altitudeModeElem = kmlDoc.createElement(altitudeModeName);
+    altitudeModeElem.innerHTML = clampToGroundName;
+    polygonElem.appendChild(altitudeModeElem);
+
+    const outerBoundaryElem = kmlDoc.createElement('outerBoundaryIs');
+    const linearRingElem = kmlDoc.createElement('LinearRing');
+    linearRingElem.appendChild(createKmlCoordinates(kmlDoc, coordinates));
+
+    outerBoundaryElem.appendChild(linearRingElem);
+    polygonElem.appendChild(outerBoundaryElem);
+    return polygonElem;
+}
+
+/**
+ * Create a KML Element which draws a shape displayed on the ground
+ * @param {XMLDocument} kmlDoc - The XMLDocument parent to which the element will be appended
+ * @param {string} name - Name to be assigned to the Element
+ * @param {string} outlineColor - Color to be used when displaying the shape's outline
+ * @param {string} fillColor - Color to be used when displaying the shape's fill
+ * @param {Array.<GeoLocation>} coordinates - List of coordinates defining the ellipse outline
+ * @returns {Element} - Ellipse Element that was created
+ */
+function createKmlShape(kmlDoc, name, outlineColor, fillColor, coordinates) {
+    const placemarkElem = kmlDoc.createElement(placemarkName);
+    placemarkElem.setAttribute('xsi:type', 'KmlShape');
+
+    placemarkElem.appendChild(createKmlName(kmlDoc, name));
+    placemarkElem.appendChild(createKmlShapeStyle(kmlDoc, outlineColor, fillColor));
+    placemarkElem.appendChild(createKmlPolygon(kmlDoc, coordinates));
+
+    return placemarkElem;
+}
+
+/**
+ * Create a KML Element which draws a shape displayed on the ground
+ * @param {XMLDocument} kmlDoc - The XMLDocument parent to which the element will be appended
+ * @param {string} name - Name to be assigned to the Element
+ * @param {string} outlineColor - Color to be used when displaying the shape's outline
+ * @param {string} fillColor - Color to be used when displaying the shape's fill
  * @param {GeoLocation} circleCenter - Coordinates of the circle's center.
  * @param {number} circleRadius - Radius (m) of the circle.
+ * @returns {Element} - Ellipse Element that was created
  */
-function addCircle(stringArray, circleLabel, lineColor, fillColor, circleCenter, circleRadius) {
-    stringArray.push(`    <Placemark>\n`);
-    stringArray.push(`      <name>${circleLabel}</name>\n`);
-    stringArray.push(`      <Style>\n`);
-    stringArray.push(`        <LineStyle>\n`);
-    stringArray.push(`          <color>${lineColor}</color>\n`);
-    stringArray.push(`          <width>2</width>\n`);
-    stringArray.push(`        </LineStyle>\n`);
-    stringArray.push(`        <PolyStyle>\n`);
-    stringArray.push(`          <color>${fillColor}</color>\n`);
-    stringArray.push(`        </PolyStyle>\n`);
-    stringArray.push(`      </Style>\n`);
-    stringArray.push(`      <Polygon>\n`);
-    stringArray.push(`        <extrude>0</extrude>\n`);
-    stringArray.push(`        <altitudeMode>clampToGround</altitudeMode>\n`);
-    stringArray.push(`        <outerBoundaryIs>\n`);
-    stringArray.push(`          <LinearRing>\n`);
-    stringArray.push(`            <coordinates>\n`);
+function createKmlCircle(kmlDoc, name, outlineColor, fillColor, circleCenter, circleRadius) {
+    const circleCoordinates = [];
 
     // The first and last coordinates must be identical
     let northCoordinates = circleCenter.getCopy();
     moveAlongBearing(northCoordinates, circleRadius, 0);
-    stringArray.push(`              ${northCoordinates.longitude},${northCoordinates.latitude},0\n`);
+    circleCoordinates.push(northCoordinates.getCopy());
 
     // Add coordinates for points around the circle every 10 degrees
     for (let bearing = 10; bearing < 360; bearing += 10) {
         let ringCoordinates = circleCenter.getCopy();
         moveAlongBearing(ringCoordinates, circleRadius, bearing);
-        stringArray.push(`              ${ringCoordinates.longitude},${ringCoordinates.latitude},0\n`);
+        circleCoordinates.push(ringCoordinates);
     }
 
-    stringArray.push(`              ${northCoordinates.longitude},${northCoordinates.latitude},0\n`);
-    stringArray.push(`            </coordinates>\n`);
-    stringArray.push(`          </LinearRing>\n`);
-    stringArray.push(`        </outerBoundaryIs>\n`);
-    stringArray.push(`      </Polygon>\n`);
-    stringArray.push(`    </Placemark>\n`);
+    circleCoordinates.push(northCoordinates);
+
+    return createKmlShape(kmlDoc, name, outlineColor, fillColor, circleCoordinates);
 }
 
 /**
- * Formats the launch and landing plot data according to the KML standard for display
- * within Google Earth.
+ * Create an XmlDocument with KML attributes and append the provided element.
+ * @param {XMLDocument} kmlDoc - The XMLDocument parent to which the element will be appended
+ * @returns {HTMLElement} - A KML root element all other data can be appended onto.
+ */
+function createKmlElement(kmlDoc) {
+    const kmlElem = kmlDoc.createElement('kml');
+    kmlElem.setAttribute('xmlns', 'http://www.opengis.net/kml/2.2');
+    kmlElem.setAttribute('xmlns:gx', 'http://www.google.com/kml/ext/2.2');
+    kmlElem.setAttribute('xmlns:kml', 'http://www.opengis.net/kml/2.2');
+    kmlElem.setAttribute('xmlns:atom', 'http://www.w3.org/2005/Atom');
+    kmlElem.setAttribute('xmlns:xsi', 'http://www.w3.org/2001/XMLSchema-instance');
+    kmlElem.setAttribute('xmlns:xsd', 'http://www.w3.org/2001/XMLSchema');
+    return kmlElem;
+}
+
+/**
+ * Formats the flight path data according to the KML standard for display within Google Earth.
  * @param {GeoLocation} launchLocation - Coordinates from which rockets are launched.
  * @param {GeoLocation} waiverLocation - Coordinates upon which the FAA waiver is centered.
  * @param {number} waiverRadius - Radius (in nautical miles) the FAA waiver covers.
- * @param {Array.<LaunchSimulationData>} - A list of launch simulation data objects. 
+ * @param {Array.<LaunchSimulationData>} launchSimulationList - A list of launch simulation data objects.
+ * @returns {XMLDocument} - KML document containing all flight path data for display in Google Earth.
  */
-async function createLandingPlotBlob(launchLocation, waiverLocation, waiverRadius, launchSimulationList) {
+function createFlightPathDocument(launchLocation, waiverLocation, waiverRadius, launchSimulationList) {
+    if (null == launchLocation) {
+        console.debug('Cannot create a flight path blob without a launch location.');
+        return;
+    }
+    if (null == launchSimulationList || 0 == launchSimulationList.length) {
+        console.debug('Cannot create a flight path blob without launch simulation data.');
+        return;
+    }
+
+    const kmlDoc = document.implementation.createDocument(null, null);
+    const documentElem = kmlDoc.createElement('Document');
+
+    // Create a placemark for the launch site (red color)
+    const redMarkerColor = getHourColor(-1);
+    documentElem.appendChild(createKmlMarker(kmlDoc, 'Launch Site', redMarkerColor.webHexadecimal, launchLocation));
+
+    // Loop through each point and write Placemark
+    launchSimulationList.forEach(element => {
+        const markerColor = getHourColor(element.time);
+        
+        documentElem.appendChild(createKmlLine(kmlDoc,
+                `Flight Path, ${element.getLaunchTime()}`,
+                markerColor.earthHexadecimal,
+                false,
+                element.launchPath));
+        
+        documentElem.appendChild(createKmlLine(kmlDoc,
+                `Ground Track, ${element.getLaunchTime()}`,
+                markerColor.earthHexadecimal,
+                true,
+                element.launchPath));
+
+        // Write the placemark for the rocket's landing coordinates
+        const landingLocation = element.getLandingLocation();
+        if (null != landingLocation) {
+            documentElem.appendChild(createKmlMarker(kmlDoc, element.getLaunchTime(), markerColor.webHexadecimal, landingLocation));
+        }
+    });
+
+    if ((null != waiverLocation) && (waiverRadius > 0)) {
+        // Do not cover up the launch site marker with one for the waiver if at the same location
+        if ((launchLocation.latitude != waiverLocation.latitude) || (launchLocation.longitude != waiverLocation)) {
+            // Create a placemark for the Waiver Center
+            documentElem.appendChild(createKmlMarker(kmlDoc, 'Waiver Center', redMarkerColor.webHexadecimal, waiverLocation));
+        }
+
+        // Plot a transparent blue circle with red outline clamped to the ground representing
+        // the waiver area. Convert the radius from nautical miles to meters.
+        documentElem.appendChild(createKmlCircle(kmlDoc, 'Wavier Radius', `ff${kmlShapeColors[kmlColorIndex]}`, `00${kmlShapeColors[kmlColorIndex]}`, waiverLocation, waiverRadius * 1852.0));
+    }
+
+    const kmlElem = createKmlElement(kmlDoc);
+    kmlElem.appendChild(documentElem);
+    kmlDoc.appendChild(kmlElem);
+
+    return kmlDoc;
+}
+
+/**
+ * Formats the flight path data according to the KML standard for display within Google Earth.
+ * @param {GeoLocation} launchLocation - Coordinates from which rockets are launched.
+ * @param {GeoLocation} waiverLocation - Coordinates upon which the FAA waiver is centered.
+ * @param {number} waiverRadius - Radius (in nautical miles) the FAA waiver covers.
+ * @param {Array.<LaunchSimulationData>} launchSimulationList - A list of launch simulation data objects generated with linear interpolation.
+ * @returns {XMLDocument} - KML document containing all ground path data for display in Google Earth.
+ */
+function createGroundPathDocument(launchLocation, waiverLocation, waiverRadius, launchSimulationList) {
+    if (null == launchLocation) {
+        console.debug('Cannot create a flight path blob without a launch location.');
+        return;
+    }
+    if (null == launchSimulationList || 0 == launchSimulationList.length) {
+        console.debug('Cannot create a flight path blob without launch simulation data.');
+        return;
+    }
+
+    const kmlDoc = document.implementation.createDocument(null, null);
+    const documentElem = kmlDoc.createElement('Document');
+
+    // Create a placemark for the launch site (red color)
+    const redMarkerColor = getHourColor(-1);
+    documentElem.appendChild(createKmlMarker(kmlDoc, 'Launch Site', redMarkerColor.webHexadecimal, launchLocation));
+
+    // Loop through each point and write Placemark
+    launchSimulationList.forEach(element => {
+        const markerColor = getHourColor(element.time);
+        
+        documentElem.appendChild(createKmlLine(kmlDoc,
+                `Ground Track, ${element.getLaunchTime()}`,
+                markerColor.earthHexadecimal,
+                true,
+                element.launchPath));
+
+        // Write the placemark for the rocket's landing coordinates
+        const landingLocation = element.getLandingLocation();
+        if (null != landingLocation) {
+            documentElem.appendChild(createKmlMarker(kmlDoc, element.getLaunchTime(), markerColor.webHexadecimal, landingLocation));
+        }
+    });
+
+    if ((null != waiverLocation) && (waiverRadius > 0)) {
+        // Do not cover up the launch site marker with one for the waiver if at the same location
+        if ((launchLocation.latitude != waiverLocation.latitude) || (launchLocation.longitude != waiverLocation)) {
+            // Create a placemark for the Waiver Center
+            documentElem.appendChild(createKmlMarker(kmlDoc, 'Waiver Center', redMarkerColor.webHexadecimal, waiverLocation));
+        }
+
+        // Plot a transparent blue circle with red outline clamped to the ground representing
+        // the waiver area. Convert the radius from nautical miles to meters.
+        documentElem.appendChild(createKmlCircle(kmlDoc, 'Wavier Radius', `ff${kmlShapeColors[kmlColorIndex]}`, `00${kmlShapeColors[kmlColorIndex]}`, waiverLocation, waiverRadius * 1852.0));
+    }
+
+    const kmlElem = createKmlElement(kmlDoc);
+    kmlElem.appendChild(documentElem);
+    kmlDoc.appendChild(kmlElem);
+
+    return kmlDoc;
+}
+
+/**
+ * Formats the launch and landing plot data according to the KML standard for display within Google Earth.
+ * @param {GeoLocation} launchLocation - Coordinates from which rockets are launched.
+ * @param {GeoLocation} waiverLocation - Coordinates upon which the FAA waiver is centered.
+ * @param {number} waiverRadius - Radius (in nautical miles) the FAA waiver covers.
+ * @param {Array.<LaunchSimulationData>} - A list of launch simulation data objects.
+ * @returns {XMLDocument} - KML document containing all landing locations for display in Google Earth.
+ */
+async function createLandingPlotDocument(launchLocation, waiverLocation, waiverRadius, launchSimulationList) {
     if (null == launchLocation) {
         console.debug('Cannot create a landing plot blob without a launch location.');
         return;
@@ -117,287 +478,56 @@ async function createLandingPlotBlob(launchLocation, waiverLocation, waiverRadiu
         return;
     }
 
-    // Write KML header
-    let stringArray = [`<?xml version="1.0" encoding="UTF-8"?>\n`];
-    stringArray.push(`<kml xmlns="http://www.opengis.net/kml/2.2">\n`);
-    stringArray.push(`  <Document>\n`);
+    const kmlDoc = document.implementation.createDocument(null, null);
+    const documentElem = kmlDoc.createElement('Document');
 
     // Create a placemark for the launch site (red color)
     const redMarkerColor = getHourColor(-1);
-    addPlacemark(stringArray, 'Launch Site', redMarkerColor.webHexadecimal, launchLocation);
+    documentElem.appendChild(createKmlMarker(kmlDoc, 'Launch Site', redMarkerColor.webHexadecimal, launchLocation));
 
     // Loop through each point and write Placemark
-    for (let index = 0; index < launchSimulationList.length; ++index) {
+    launchSimulationList.forEach(element => {
         // Only need the rocket's landing coordinates
-        const landingLocation = launchSimulationList[index].getLandingLocation();
-        if (null == landingLocation) {
-            continue;
+        const landingLocation = element.getLandingLocation();
+        if (null != landingLocation) {
+            // Write the placemark for the rocket's landing coordinates
+            const markerColor = getHourColor(element.time);
+            documentElem.appendChild(createKmlMarker(kmlDoc, element.getLaunchTime(), markerColor.webHexadecimal, landingLocation));
         }
-
-        const markerColor = getHourColor(launchSimulationList[index].time);
-        addPlacemark(stringArray, launchSimulationList[index].getLaunchTime(), markerColor.webHexadecimal, landingLocation);
-    }
+    });
 
     if ((null != waiverLocation) && (waiverRadius > 0)) {
         // Do not cover up the launch site marker with one for the waiver if at the same location
         if ((launchLocation.latitude != waiverLocation.latitude) || (launchLocation.longitude != waiverLocation)) {
             // Create a placemark for the Waiver Center
-            addPlacemark(stringArray, 'Waiver Center', redMarkerColor.webHexadecimal, waiverLocation);
-        }
-
-        // Plot a circle clamped to the ground representing the waiver area.
-        // Using aed color with some transparency.
-        stringArray.push(`    <Placemark>\n`);
-        stringArray.push(`      <name>Waiver Radius</name>\n`);
-        stringArray.push(`      <Style>\n`);
-        stringArray.push(`        <LineStyle>\n`);
-        stringArray.push(`          <color>ff0000ff</color>\n`);
-        stringArray.push(`          <width>2</width>\n`);
-        stringArray.push(`        </LineStyle>\n`);
-        stringArray.push(`        <PolyStyle>\n`);
-        stringArray.push(`          <color>1aff0000</color>\n`);
-        stringArray.push(`        </PolyStyle>\n`);
-        stringArray.push(`      </Style>\n`);
-        stringArray.push(`      <Polygon>\n`);
-        stringArray.push(`        <extrude>0</extrude>\n`);
-        stringArray.push(`        <altitudeMode>clampToGround</altitudeMode>\n`);
-        stringArray.push(`        <outerBoundaryIs>\n`);
-        stringArray.push(`          <LinearRing>\n`);
-        stringArray.push(`            <coordinates>\n`);
-
-        // Convert the radius from nautical miles to meters
-        const waiverRadiusMeters = waiverRadius * 1852.0;
-
-        // The first and last coordinates must be identical
-        let northCoordinates = waiverLocation.getCopy();
-        moveAlongBearing(northCoordinates, waiverRadiusMeters, 0);
-        stringArray.push(`              ${northCoordinates.longitude},${northCoordinates.latitude},0\n`);
-
-        // Add coordinates for points around the circle every 10 degrees
-        for (let bearing = 10; bearing < 360; bearing += 10) {
-            let ringCoordinates = waiverLocation.getCopy();
-            moveAlongBearing(ringCoordinates, waiverRadiusMeters, bearing);
-            stringArray.push(`              ${ringCoordinates.longitude},${ringCoordinates.latitude},0\n`);
-        }
-
-        stringArray.push(`              ${northCoordinates.longitude},${northCoordinates.latitude},0\n`);
-        stringArray.push(`            </coordinates>\n`);
-        stringArray.push(`          </LinearRing>\n`);
-        stringArray.push(`        </outerBoundaryIs>\n`);
-        stringArray.push(`      </Polygon>\n`);
-        stringArray.push(`    </Placemark>\n`);
-    }
-
-    // Write KML footer
-    stringArray.push(`  </Document>\n`);
-    stringArray.push(`</kml>\n`);
-
-    return new Blob(stringArray);
-}
-
-/**
- * Formats the flight path data according to the KML standard for display within Google Earth.
- * @param {GeoLocation} launchLocation - Coordinates from which rockets are launched.
- * @param {GeoLocation} waiverLocation - Coordinates upon which the FAA waiver is centered.
- * @param {number} waiverRadius - Radius (in nautical miles) the FAA waiver covers.
- * @param {Array.<LaunchSimulationData>} - A list of launch simulation data objects. 
- */
-function createFlightPathBlob(launchLocation, waiverLocation, waiverRadius, launchSimulationList) {
-    if (null == launchLocation) {
-        console.debug('Cannot create a flight path blob without a launch location.');
-        return;
-    }
-    if (null == launchSimulationList || 0 == launchSimulationList.length) {
-        console.debug('Cannot create a flight path blob without launch simulation data.');
-        return;
-    }
-
-    // Write KML header
-    let stringArray = [`<?xml version="1.0" encoding="UTF-8"?>\n`];
-    stringArray.push(`<kml xmlns="http://www.opengis.net/kml/2.2">\n`);
-    stringArray.push(`  <Document>\n`);
-
-    // Create a placemark for the launch site (red color)
-    const redMarkerColor = getHourColor(-1);
-    addPlacemark(stringArray, 'Launch Site', redMarkerColor.webHexadecimal, launchLocation);
-
-    // Loop through each point and write Placemark
-    for (let index = 0; index < launchSimulationList.length; ++index) {
-        // Only need the rocket's landing coordinates
-        const landingLocation = launchSimulationList[index].getLandingLocation();
-        if (null == landingLocation) {
-            continue;
-        }
-
-        // Write the flight path coordinates with altitude, tag, and color
-        stringArray.push(`    <Placemark>\n`);
-        stringArray.push(`      <name>Flight Path, ${launchSimulationList[index].getLaunchTime()}</name>\n`);
-        
-        // flight path track style
-        const markerColor = getHourColor(launchSimulationList[index].time);
-        stringArray.push(`      <Style>\n`);
-        stringArray.push(`        <LineStyle>\n`);
-        stringArray.push(`          <color>${markerColor.earthHexadecimal}</color>\n`);
-        stringArray.push(`          <width>4</width>\n`);
-        stringArray.push(`        </LineStyle>\n`);
-        stringArray.push(`      </Style>\n`);
-        
-        // flight path coordinates
-        stringArray.push(`      <LineString>\n`);
-        stringArray.push(`        <altitudeMode>relativeToGround</altitudeMode>\n`);
-        stringArray.push(`        <tessellate>1</tessellate>\n`);
-        stringArray.push(`        <coordinates>\n`);
-        for (let pathIndex = 0; pathIndex < launchSimulationList[index].launchPath.length; ++pathIndex) {
-            const pathPoint = launchSimulationList[index].launchPath[pathIndex];
-            const altitude = feetToMeters(pathPoint.altitude);
-            stringArray.push(`          ${pathPoint.location.longitude},${pathPoint.location.latitude},${altitude.toFixed(2)}\n`);
-        }
-        stringArray.push(`        </coordinates>\n`);
-        stringArray.push(`      </LineString>\n`);
-        
-        stringArray.push(`    </Placemark>\n`);
-        
-        // Write the ground path coordinates with altitude, tag, and color
-        stringArray.push(`    <Placemark>\n`);
-        stringArray.push(`      <name>Ground Track, ${launchSimulationList[index].getLaunchTime()}</name>\n`);
-        
-        // Ground track style (same color as main track, line width 1)
-        stringArray.push(`      <Style>\n`);
-        stringArray.push(`        <LineStyle>\n`);
-        stringArray.push(`          <color>${markerColor.earthHexadecimal}</color>\n`);
-        stringArray.push(`          <width>1</width>\n`);
-        stringArray.push(`        </LineStyle>\n`);
-        stringArray.push(`      </Style>\n`);
-        
-        // Ground path coordinates
-        stringArray.push(`      <LineString>\n`);
-        stringArray.push(`        <altitudeMode>clampToGround</altitudeMode>\n`);
-        stringArray.push(`        <tessellate>1</tessellate>\n`);
-        stringArray.push(`        <coordinates>\n`);
-        for (let pathIndex = 0; pathIndex < launchSimulationList[index].launchPath.length; ++pathIndex) {
-            const pathPoint = launchSimulationList[index].launchPath[pathIndex];
-            stringArray.push(`          ${pathPoint.location.longitude},${pathPoint.location.latitude},0\n`);
-        }
-        stringArray.push(`        </coordinates>\n`);
-        stringArray.push(`      </LineString>\n`);
-        
-        // Closing the ground track Placemark
-        stringArray.push(`    </Placemark>\n`);
-        
-        // Write the placemark for the last coordinate of the ground track
-        if (launchSimulationList[index].launchPath.length > 0) {
-            const lastLocation = launchSimulationList[index].launchPath[launchSimulationList[index].launchPath.length - 1].location;
-            addPlacemark(stringArray, launchSimulationList[index].getLaunchTime(), markerColor.webHexadecimal, lastLocation);
-        }
-    }
-
-    if ((null != waiverLocation) && (waiverRadius > 0)) {
-        // Do not cover up the launch site marker with one for the waiver if at the same location
-        if ((launchLocation.latitude != waiverLocation.latitude) || (launchLocation.longitude != waiverLocation)) {
-            // Create a placemark for the Waiver Center
-            addPlacemark(stringArray, 'Waiver Center', redMarkerColor.webHexadecimal, waiverLocation);
+            documentElem.appendChild(createKmlMarker(kmlDoc, 'Waiver Center', redMarkerColor.webHexadecimal, waiverLocation));
         }
 
         // Plot a transparent blue circle with red outline clamped to the ground representing
         // the waiver area. Convert the radius from nautical miles to meters.
-        addCircle(stringArray, 'Wavier Radius', redMarkerColor.earthHexadecimal, '1aff0000', waiverLocation, waiverRadius * 1852.0);
+        documentElem.appendChild(createKmlCircle(kmlDoc, 'Wavier Radius', `ff${kmlShapeColors[kmlColorIndex]}`, `00${kmlShapeColors[kmlColorIndex]}`, waiverLocation, waiverRadius * 1852.0));
     }
 
-    // Write KML footer
-    stringArray.push(`  </Document>\n`);
-    stringArray.push(`</kml>\n`);
+    const kmlElem = createKmlElement(kmlDoc);
+    kmlElem.appendChild(documentElem);
+    kmlDoc.appendChild(kmlElem);
 
-    return new Blob(stringArray);
+    return kmlDoc;
 }
 
 /**
- * Formats the flight path data according to the KML standard for display within Google Earth.
- * @param {GeoLocation} launchLocation - Coordinates from which rockets are launched.
- * @param {GeoLocation} waiverLocation - Coordinates upon which the FAA waiver is centered.
- * @param {number} waiverRadius - Radius (in nautical miles) the FAA waiver covers.
- * @param {Array.<LaunchSimulationData>} - A list of launch simulation data objects. 
+ * Extract individual KML strings from the provided document and place them into a Blob.
+ * @param {XMLDocument} kmlDoc - XMLDocument in KML format to be converted.
+ * @return {Blob} - A Blob containing all the KML strings from the provided document.
  */
-function createGroundPathBlob(launchLocation, waiverLocation, waiverRadius, launchSimulationList) {
-    if (null == launchLocation) {
-        console.debug('Cannot create a flight path blob without a launch location.');
-        return;
-    }
-    if (null == launchSimulationList || 0 == launchSimulationList.length) {
-        console.debug('Cannot create a flight path blob without launch simulation data.');
-        return;
-    }
-    
-    const redMarkerColor = getHourColor(-1);
+function createBlobFromDocument(kmlDoc) {
+    // DOM does not consider this line valid XML, so add it directly as a string.
+    let xmlStrings = ['<?xml version="1.0" encoding="utf-8"?>'];
 
-    // Write KML header
-    let stringArray = [`<?xml version="1.0" encoding="UTF-8"?>\n`];
-    stringArray.push(`<kml xmlns="http://www.opengis.net/kml/2.2">\n`);
-    stringArray.push(`  <Document>\n`);
+    const serializer = new XMLSerializer();
+    xmlStrings.push(serializer.serializeToString(kmlDoc));
 
-    // Create a placemark for the launch site (red color)
-    addPlacemark(stringArray, 'Launch Site', redMarkerColor.webHexadecimal, launchLocation);
-
-    // Loop through each point and write Placemark
-    for (let index = 0; index < launchSimulationList.length; ++index) {
-        // Only need the rocket's landing coordinates
-        const landingLocation = launchSimulationList[index].getLandingLocation();
-        if (null == landingLocation) {
-            continue;
-        }
-        
-        const markerColor = getHourColor(launchSimulationList[index].time);
-        
-        // Write the ground path coordinates with altitude, tag, and color
-        stringArray.push(`    <Placemark>\n`);
-        stringArray.push(`      <name>Ground Track, ${launchSimulationList[index].getLaunchTime()}</name>\n`);
-        
-        // Ground track style (same color as main track, line width 1)
-        stringArray.push(`      <Style>\n`);
-        stringArray.push(`        <LineStyle>\n`);
-        stringArray.push(`          <color>${markerColor.earthHexadecimal}</color>\n`);
-        stringArray.push(`          <width>3</width>\n`);
-        stringArray.push(`        </LineStyle>\n`);
-        stringArray.push(`      </Style>\n`);
-        
-        // Ground path coordinates
-        stringArray.push(`      <LineString>\n`);
-        stringArray.push(`        <altitudeMode>clampToGround</altitudeMode>\n`);
-        stringArray.push(`        <tessellate>1</tessellate>\n`);
-        stringArray.push(`        <coordinates>\n`);
-        for (let pathIndex = 0; pathIndex < launchSimulationList[index].launchPath.length; ++pathIndex) {
-            const pathPoint = launchSimulationList[index].launchPath[pathIndex];
-            stringArray.push(`          ${pathPoint.location.longitude},${pathPoint.location.latitude},0\n`);
-        }
-        stringArray.push(`        </coordinates>\n`);
-        stringArray.push(`      </LineString>\n`);
-        
-        // Closing the ground track Placemark
-        stringArray.push(`    </Placemark>\n`);
-        
-        // Write the placemark for the last coordinate of the ground track
-        if (launchSimulationList[index].launchPath.length > 0) {
-            const lastLocation = launchSimulationList[index].launchPath[launchSimulationList[index].launchPath.length - 1].location;
-            addPlacemark(stringArray, launchSimulationList[index].getLaunchTime(), markerColor.webHexadecimal, lastLocation);
-        }
-    }
-
-    if ((null != waiverLocation) && (waiverRadius > 0)) {
-        // Do not cover up the launch site marker with one for the waiver if at the same location
-        if ((launchLocation.latitude != waiverLocation.latitude) || (launchLocation.longitude != waiverLocation)) {
-            // Create a placemark for the Waiver Center
-            addPlacemark(stringArray, 'Waiver Center', redMarkerColor.webHexadecimal, waiverLocation);
-        }
-
-        // Plot a transparent blue circle with red outline clamped to the ground representing
-        // the waiver area. Convert the radius from nautical miles to meters.
-        addCircle(stringArray, 'Wavier Radius', redMarkerColor.earthHexadecimal, '1aff0000', waiverLocation, waiverRadius * 1852.0);
-    }
-
-    // Write KML footer
-    stringArray.push(`  </Document>\n`);
-    stringArray.push(`</kml>\n`);
-
-    return new Blob(stringArray);
+    return new Blob(xmlStrings, { type: 'application/vnd.google-earth.kml+xml', });
 }
 
 /**
@@ -471,7 +601,6 @@ async function saveKmlFile(kmlBlob, defaultName) {
     }
 };
 
-
 /**
  * Formats the launch and landing plot data according to the KML standard and saves it
  * to a file for later importation into Google Earth.
@@ -481,10 +610,10 @@ async function saveKmlFile(kmlBlob, defaultName) {
  * @param {Array.<LaunchSimulationData>} - A list of launch simulation data objects. 
  */
 async function saveLandingScatter(launchLocation, waiverLocation, waiverRadius, launchSimulationList) {
-    const kmlBlob = await createLandingPlotBlob(launchLocation, waiverLocation, waiverRadius, launchSimulationList);
+    const kmlDoc = await createLandingPlotDocument(launchLocation, waiverLocation, waiverRadius, launchSimulationList);
+    const kmlBlob = createBlobFromDocument(kmlDoc);
     await saveKmlFile(kmlBlob, 'LandingScatter.kml');
 }
-
 
 /**
  * Formats the flight path data according to the KML standard and saves it to a file for
@@ -492,11 +621,12 @@ async function saveLandingScatter(launchLocation, waiverLocation, waiverRadius, 
  * @param {GeoLocation} launchLocation - Coordinates from which rockets are launched.
  * @param {GeoLocation} waiverLocation - Coordinates upon which the FAA waiver is centered.
  * @param {number} waiverRadius - Radius (in nautical miles) the FAA waiver covers.
- * @param {Array.<LaunchSimulationData>} - A list of launch simulation data objects. 
+ * @param {Array.<LaunchSimulationData>} launchSimulationList - A list of launch simulation data objects.
  */
 async function saveFlightScatter(launchLocation, waiverLocation, waiverRadius, launchSimulationList) {
-    const kmlBlob = await createFlightPathBlob(launchLocation, waiverLocation, waiverRadius, launchSimulationList);
-    await saveKmlFile(kmlBlob, 'FlightScatter.kml');
+    const kmlDoc = await createFlightPathDocument(launchLocation, waiverLocation, waiverRadius, launchSimulationList);
+    const kmlBlob = createBlobFromDocument(kmlDoc);
+    await saveKmlFile(kmlBlob, 'FlightPaths.kml');
 }
 
 /**
@@ -505,10 +635,11 @@ async function saveFlightScatter(launchLocation, waiverLocation, waiverRadius, l
  * @param {GeoLocation} launchLocation - Coordinates from which rockets are launched.
  * @param {GeoLocation} waiverLocation - Coordinates upon which the FAA waiver is centered.
  * @param {number} waiverRadius - Radius (in nautical miles) the FAA waiver covers.
- * @param {Array.<LaunchSimulationData>} - A list of launch simulation data objects. 
+ * @param {Array.<LaunchSimulationData>} launchSimulationList - A list of launch simulation data objects.
  */
 async function saveGroundPaths(launchLocation, waiverLocation, waiverRadius, launchSimulationList) {
-    const kmlBlob = await createGroundPathBlob(launchLocation, waiverLocation, waiverRadius, launchSimulationList);
+    const kmlDoc = await createGroundPathDocument(launchLocation, waiverLocation, waiverRadius, launchSimulationList);
+    const kmlBlob = createBlobFromDocument(kmlDoc);
     await saveKmlFile(kmlBlob, 'GroundPaths.kml');
 }
 
