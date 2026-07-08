@@ -8,7 +8,8 @@ import { getHourColor } from "./map_colors.js";
 import { driftSimulation } from './drift_simulation.js';
 import { RocketBase, RocketApogee, RocketWeathercocking } from './rocket.js';
 
-const googleMapApiKey = 'YOUR_API_KEY';
+const defaultMapApiKey = 'YOUR_API_KEY';
+const googleMapApiKey = defaultMapApiKey;
 
 // Declare some ID strings so they do not have to be in-line everywhere
 const waiverLatitudeId = 'waiver_latitude';
@@ -539,6 +540,10 @@ function resetLaunchSiteDisplay() {
  * @param {Array.<LaunchSimulationData>} launchList - A new table row will be added for each launch.
  */
 function updateStaticLandingScatterImage(launchList) {
+    // Do nothing if the API key is invalid
+    if (defaultMapApiKey === googleMapApiKey)
+        return;
+
     staticMapImage.hidden = false;
 
     // The beginning of the URL does not change.
@@ -734,7 +739,7 @@ function updateDriftResultTable(launchList) {
  */
 window.onload = () => {
     // Print a version into the log to help keep track between iterations.
-    console.log('GPS DriftCast 1.2b');
+    console.log('GPS DriftCast 1.3');
 
     const currentDate = new Date();
 
