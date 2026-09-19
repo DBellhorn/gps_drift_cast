@@ -96,20 +96,52 @@ let launchLocationDetails = null;
 let rocketDetails = null;
 
 /**
+ * Convert the proviced hour value (0-23) into a time input element compatible string.
+ * @param {number} hour - The hour value to be converted.
+ * @returns {string} String compatible with a time input element.
+ */
+function convertHourForTimeInput(hour) {
+    let convertedHour = '';
+
+    if (isNaN(hour) || hour > 23) {
+        convertedHour = '00:00';
+    } else if (hour < 10) {
+        convertedHour = `0${hour}:00`;
+    } else {
+        convertedHour = `${hour}:00`;
+    }
+
+    return convertedHour;
+}
+
+/**
+ * Update the value stored and displayed in the launch start time field.
+ * @param {number} startHour - The new start hour for the launch.
+ * @throws {TypeError} Invalid start hour value.
+ */
+function setStartTimeValue(startHour) {
+    if (null === startTimeElement)
+        return;
+
+    if (isNaN(startHour))
+        throw new TypeError(`Invalid start hour: ${startHour}.`);
+
+    startTimeElement.value = convertHourForTimeInput(startHour);
+}
+
+/**
  * Update the value stored and displayed in the launch end time field.
  * @param {number} endHour - The new end hour for the launch.
  * @throws {TypeError} Invalid end hour value.
  */
 function setEndTimeValue(endHour) {
-    if (isNaN(endHour)) throw new TypeError(`Invalid end hour: ${endHour}.`);
+    if (null === endTimeElement)
+        return;
 
-    if (endHour > 23) {
-        endTimeElement.value = '00:00';
-    } else if (endHour < 10) {
-        endTimeElement.value = `0${endHour}:00`;
-    } else {
-        endTimeElement.value = `${endHour}:00`;
-    }
+    if (isNaN(endHour))
+        throw new TypeError(`Invalid end hour: ${endHour}.`);
+
+    endTimeElement.value = convertHourForTimeInput(endHour);
 }
 
 /**
@@ -739,27 +771,53 @@ function updateDriftResultTable(launchList) {
  */
 window.onload = () => {
     // Print a version into the log to help keep track between iterations.
-    console.log('GPS DriftCast 1.3');
+    console.log('GPS DriftCast 1.4');
 
-    const currentDate = new Date();
+    let launchDate = new Date();
+    let launchStartHour = launchDate.getHours();
+
+    // Defaulting to 4pm due to personal bias
+    let launchEndHour = 16;
+
+    // Use Saturday as initial value if the current day is earlier in the week
+    const launchDay = launchDate.getDay();
+    if (launchDay < 6) {
+        launchDate.setTime(launchDate.getTime() + ((6 - launchDay) * secondsInDay));
+
+        // Set the start time based on typical launch hours
+        launchStartHour = 9;
+    } else if (launchStartHour < 16) {
+        // Today is a Saturday, so just update the start and end times
+        if (launchStartHour > 9) {
+            --launchStartHour;
+        } else {
+            launchStartHour = 9;
+        }
+    } else if (launchStartHour < 23) {
+        launchEndHour = launchStartHour + 1;
+    } else {
+        // It appears start and end times will span across days, so skip ahead to the following Saturday
+        launchDate.setTime(launchDate.getTime() + (7 * secondsInDay));
+        launchStartHour = 9;
+    }
 
     // Add leading zeros if the numbers are single digit
     let monthString;
-    if (currentDate.getMonth() < 9) {
-        monthString = '0' + (currentDate.getMonth() + 1).toString();
+    if (launchDate.getMonth() < 9) {
+        monthString = '0' + (launchDate.getMonth() + 1).toString();
     } else {
-        monthString = (currentDate.getMonth() + 1).toString();
+        monthString = (launchDate.getMonth() + 1).toString();
     }
 
     let dayString;
-    if (currentDate.getDate() < 10) {
-        dayString = '0' + currentDate.getDate().toString();
+    if (launchDate.getDate() < 10) {
+        dayString = '0' + launchDate.getDate().toString();
     } else {
-        dayString = currentDate.getDate().toString();
+        dayString = launchDate.getDate().toString();
     }
 
-    // Initialize the date element to today
-    launchDateElement.value = `${currentDate.getFullYear()}-${monthString}-${dayString}`;
+    // Initialize the date element and time elements
+    launchDateElement.value = `${launchDate.getFullYear()}-${monthString}-${dayString}`;
 
     // Prevent the user from selecting a date too far into the future
     const maxDate = new Date();
@@ -767,16 +825,8 @@ window.onload = () => {
 
     launchDateElement.max = `${maxDate.getFullYear()}-${(maxDate.getMonth() + 1).toString().padStart(2, '0')}-${maxDate.getDate().toString().padStart(2, '0')}`;
 
-    // Initialize the time elements to the current hour plus a max offset
-    const currentHour = currentDate.getHours();
-    if (currentHour < 10) {
-        startTimeElement.value = `0${currentHour}:00`;
-    } else {
-        startTimeElement.value = `${currentHour}:00`;
-    }
-
-    // Initialize the end time for six hours after the start time
-    setEndTimeValue(currentHour + 6);
+    setStartTimeValue(launchStartHour);
+    setEndTimeValue(launchEndHour);
 
     // Open our database of launch sites
     const dbSitesOpenRequest = window.indexedDB.open('DriftCast_Sites', 1);
