@@ -190,7 +190,7 @@ function bearingBetweenLocations(locationA, locationB) {
     if (bearing < 0) {
         return bearing + 360;
     } else if (bearing > 360) {
-        return brearing - 360;
+        return bearing - 360;
     }
     return bearing;
 }
