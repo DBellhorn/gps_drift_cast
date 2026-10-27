@@ -1,4 +1,4 @@
-import { GeoLocation, feetToMeters, moveAlongBearing } from "./geo.js";
+import { GeoLocation, feetToMeters, metersToFeet, moveAlongBearing, distanceBetweenLocations, bearingBetweenLocations } from "./geo.js";
 import { LaunchSimulationData } from "./launch.js";
 import { getHourColor } from "./map_colors.js";
 
@@ -16,7 +16,7 @@ const placemarkName = 'Placemark';
  * Create a KML Element containing the name associated with the parent Element
  * @param {XMLDocument} kmlDoc - Parent Document to which this Element will be appended
  * @param {string} name - Name to be assigned to the Element
- * @returns {Element}
+ * @returns {Element} Name Element that was created
  */
 function createKmlName(kmlDoc, name) {
     const nameElem = kmlDoc.createElement('name');
@@ -29,7 +29,7 @@ function createKmlName(kmlDoc, name) {
  * @param {XMLDocument} kmlDoc - Parent Document to which this Element will be appended
  * @param {string} color - Color to be used when drawing the associated line
  * @param {number} width - Identifies how wide the associated line should be drawn
- * @returns {Element}
+ * @returns {Element} LineStyle Element that was created
  */
 function createKmlLineStyle(kmlDoc, color, width) {
     const lineStyleElem = kmlDoc.createElement('LineStyle');
@@ -48,7 +48,7 @@ function createKmlLineStyle(kmlDoc, color, width) {
  * Create a KML Element defining the style used to draw a polygon
  * @param {XMLDocument} kmlDoc - Parent Document to which this Element will be appended
  * @param {string} color - Color to be used when drawing the associated polygon
- * @returns {Element}
+ * @returns {Element} PolyStyle Element that was created
  */
 function createKmlPolyStyle(kmlDoc, color) {
     const styleElem = kmlDoc.createElement('PolyStyle');
@@ -63,7 +63,7 @@ function createKmlPolyStyle(kmlDoc, color) {
  * @param {XMLDocument} kmlDoc - Parent Document to which this Element will be appended
  * @param {string} outlineColor - Color to be used when drawing the associated shape's outline
  * @param {string} fillColor - Color to be used when drawing the associated shape's fill
- * @returns {Element}
+ * @returns {Element} Style Element that was created
  */
 function createKmlShapeStyle(kmlDoc, outlineColor, fillColor) {
     const styleElem = kmlDoc.createElement(styleName);
@@ -76,7 +76,7 @@ function createKmlShapeStyle(kmlDoc, outlineColor, fillColor) {
  * Create a KML Element containing a list of space separated geo-coordinates
  * @param {XMLDocument} kmlDoc - Parent Document to which this Element will be appended
  * @param {Array.<GeoLocation>} coordinates - List of coordinates the Element will contain
- * @returns {Element}
+ * @returns {Element} Coordiantes Element that was created
  */
 function createKmlCoordinates(kmlDoc, coordinates) {
     const coordinatesElem = kmlDoc.createElement(coordinatesName);
@@ -89,7 +89,7 @@ function createKmlCoordinates(kmlDoc, coordinates) {
  * @param {XMLDocument} kmlDoc - Parent Document to which this Element will be appended
  * @param {Array.<LaunchPathPoint>} launchPath - List of points defining a flight path to be displayed
  * @param {boolean} clampToGround - Indicates if the lines should be clamped to the ground
- * @returns {Element}
+ * @returns {Element} Coordinates Element that was created
  */
 function createKmlLaunchPath(kmlDoc, launchPath, clampToGround) {
     const coordinatesElem = kmlDoc.createElement(coordinatesName);
@@ -102,7 +102,7 @@ function createKmlLaunchPath(kmlDoc, launchPath, clampToGround) {
  * @param {XMLDocument} kmlDoc - Parent Document to which this Element will be appended
  * @param {string} name - Name to be assigned to the Element
  * @param {GeoLocation} coordinate - The coordinates where this label should be placed
- * @returns {Element}
+ * @returns {Element} KmlLabel Placemark that was created
  */
 function createKmlLabel(kmlDoc, name, coordinate, agl = 0) {
     const labelElem = kmlDoc.createElement(placemarkName);
@@ -136,7 +136,7 @@ function createKmlLabel(kmlDoc, name, coordinate, agl = 0) {
  * @param {number} iconScale - Scale of the label's icon
  * @param {number} labelScale - Scale of the label's text
  * @param {string} color - Color to be used for displaying the marker's icon
- * @returns 
+ * @returns {Element} MarkerStyle Element that was created
  */
 function createKmlMarkerStyle(kmlDoc, iconScale, labelScale, color) {
     const styleElem = kmlDoc.createElement(styleName);
@@ -168,14 +168,42 @@ function createKmlMarkerStyle(kmlDoc, iconScale, labelScale, color) {
 }
 
 /**
+ * Creates HTML describing the distance and heading between launchLocation and landingLocation
+ * @param {GeoLocation} launchLocation - The coordiantes where the rocket was launched
+ * @param {GeoLocation} landingLocation - The coordiantes where the rocket landed
+ * @returns {string} Generated HTML containing the distance and heading between locations
+ */
+function createLandingDescription(launchLocation, landingLocation) {
+    const driftDist = Math.round(metersToFeet(distanceBetweenLocations(launchLocation, landingLocation)));
+    const driftBearing = Math.round(bearingBetweenLocations(launchLocation, landingLocation));
+    const latitude = landingLocation.latitude.toFixed(4);
+    const longitude = landingLocation.longitude.toFixed(4);
+    //return `<![CDATA[<b>Position:</b> ${driftDist} ft at ${driftBearing}° from the pad<br/><b>Latitude:</b>${latitude}<br/><b>Longitude:</b>${longitude}]]>`;
+    return `<![CDATA[<b>From the pad:</b> ${driftDist} ft at ${driftBearing}°<br/><b>Coordinates:</b> ${latitude}, ${longitude}]]>`;
+}
+
+/**
+ * Create a KML Element containing descriptive text/HTML to be attached to an Placemark
+ * @param {XMLDocument} kmlDoc - Parent Document to which this Element will be appended
+ * @param {string} description - Text/HTML to be placed within the generated description Element
+ * @returns {Element} Description Element that was created
+ */
+function createDescription(kmlDoc, description) {
+    const descriptionElem = kmlDoc.createElement('description');
+    descriptionElem.innerHTML = description;
+    return descriptionElem;
+}
+
+/**
  * Create a KML Element defining a marker with an icon and text which reacts to being highlighted
  * @param {XMLDocument} kmlDoc - Parent Document to which this Element will be appended
  * @param {string} name - Name to be assigned to the Element
  * @param {string} color - The color to be used when drawing this marker's icon
  * @param {GeoLocation} location - Coordinates identifying where this icon should be placed
- * @returns 
+ * @param {string} description - A <description> containing this string will be appended if valid
+ * @returns {Element} Marker Placemark that was created
  */
-function createKmlMarker(kmlDoc, name, color, location) {
+function createKmlMarker(kmlDoc, name, color, location, description = null) {
     const placemarkElem = kmlDoc.createElement(placemarkName);
     placemarkElem.appendChild(createKmlName(kmlDoc, name));
 
@@ -203,6 +231,12 @@ function createKmlMarker(kmlDoc, name, color, location) {
     const coordinatesElem = kmlDoc.createElement(coordinatesName);
     coordinatesElem.innerHTML = `${location.longitude},${location.latitude},0`;
     pointElem.appendChild(coordinatesElem);
+
+    if (null !== description) {
+        const descriptionElem = createDescription(kmlDoc, description);
+        placemarkElem.appendChild(descriptionElem);
+    }
+
     placemarkElem.appendChild(pointElem);
     return placemarkElem;
 }
@@ -214,7 +248,7 @@ function createKmlMarker(kmlDoc, name, color, location) {
  * @param {color} color - The color to be used when drawing this line
  * @param {boolean} clampToGround - Indicates if the lines should be clamped to the ground
  * @param {Array.<LaunchPathPoint>} flightPath - List of points defining the flight path to be drawn
- * @returns {Element}
+ * @returns {Element} KmlLine Placemark that was created
  */
 function createKmlLine(kmlDoc, name, color, clampToGround, flightPath) {
     const lineElem = kmlDoc.createElement(placemarkName);
@@ -376,7 +410,8 @@ function createFlightPathDocument(launchLocation, waiverLocation, waiverRadius, 
         // Write the placemark for the rocket's landing coordinates
         const landingLocation = element.getLandingLocation();
         if (null != landingLocation) {
-            documentElem.appendChild(createKmlMarker(kmlDoc, element.getLaunchTime(), markerColor.webHexadecimal, landingLocation));
+            const landingDescription = createLandingDescription(launchLocation, landingLocation);
+            documentElem.appendChild(createKmlMarker(kmlDoc, element.getLaunchTime(), markerColor.webHexadecimal, landingLocation, landingDescription));
         }
     });
 
@@ -437,7 +472,8 @@ function createGroundPathDocument(launchLocation, waiverLocation, waiverRadius, 
         // Write the placemark for the rocket's landing coordinates
         const landingLocation = element.getLandingLocation();
         if (null != landingLocation) {
-            documentElem.appendChild(createKmlMarker(kmlDoc, element.getLaunchTime(), markerColor.webHexadecimal, landingLocation));
+            const landingDescription = createLandingDescription(launchLocation, landingLocation);
+            documentElem.appendChild(createKmlMarker(kmlDoc, element.getLaunchTime(), markerColor.webHexadecimal, landingLocation, landingDescription));
         }
     });
 
@@ -492,7 +528,8 @@ async function createLandingPlotDocument(launchLocation, waiverLocation, waiverR
         if (null != landingLocation) {
             // Write the placemark for the rocket's landing coordinates
             const markerColor = getHourColor(element.time);
-            documentElem.appendChild(createKmlMarker(kmlDoc, element.getLaunchTime(), markerColor.webHexadecimal, landingLocation));
+            const landingDescription = createLandingDescription(launchLocation, landingLocation);
+            documentElem.appendChild(createKmlMarker(kmlDoc, element.getLaunchTime(), markerColor.webHexadecimal, landingLocation, landingDescription));
         }
     });
 
